@@ -13,11 +13,7 @@ const UserSchema = new mongoose.Schema({
     health_status: { type: String, default: '' },
 }, { timestamps: true });
 
-UserSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) return next();
-    this.password = await bcrypt.hash(this.password, 10);
-    next();
-});
+
 
 
 export default mongoose.model('User' , UserSchema)

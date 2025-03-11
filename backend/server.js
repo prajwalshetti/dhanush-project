@@ -2,6 +2,8 @@ import express from 'express'
 import dotenv from 'dotenv'
 import cors from 'cors'
 import connectDb from './config/db.js'
+import authRoutes from './routes/AuthRoutes.js'
+
 
 dotenv.config()
 connectDb();
@@ -16,6 +18,8 @@ app.use(cors())
 app.get('/' ,(req,res)=>{
     res.send("Blood donation running successfully")
 })
+
+app.use("/api/auth", authRoutes); 
 
 app.listen(PORT , ()=>{
     console.log("Server started successfully")
