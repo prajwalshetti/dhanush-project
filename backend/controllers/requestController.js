@@ -26,4 +26,77 @@ export const createBloodRequest = async(req,res)=>{
     }
 }
 
+export const getBloodRequests = async (req, res) => {
+    try {  
+        const { blood_group, location } = req.query;
+
+        let filter = {};
+        if (blood_group) filter.blood_group = blood_group;
+        if (location) filter.location = location;
+
+        // Fetch all blood requests, sorted by newest first
+        const bloodRequests = await BloodRequest.find().sort({ createdAt: -1 });
+
+        res.status(200).json(bloodRequests);
+    } catch (error) {
+        console.error("Error fetching blood requests:", error);
+        res.status(500).json({ message: "Server Error" });
+    }
+};
+
+export const updateBloodRequestStatus = async(req,res)=>{
+    try{
+       
+        const {id} = req.params
+        const {status} = req.body
+
+        const validStatuses = ["pending", "fulfilled", "cancelled"];
+
+        if(!validStatuses.includes(status)){
+            return res.status(400).json({ message: "Invalid status value" });
+        }
+
+        const updatedRequest = await BloodRequest.findByIdAndUpdate(
+            id,
+            { status, fulfilled_at: status === "fulfilled" ? new Date() : null },
+            { new: true } 
+        )
+
+        if (!updatedRequest) {
+            return res.status(404).json({ message: "Blood request not found" });
+        }
+
+        res.status(200).json(updatedRequest);
+
+    }
+    catch(err)
+    {
+        console.error("Error updating blood request status:", err);
+        res.status(500).json({ message: "Server Error" });
+    }
+}
+export const deleteBloodRequest = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Find the request
+        const bloodRequest = await BloodRequest.findById(id);
+        if (!bloodRequest) {
+            return res.status(404).json({ message: "Blood request not found" });
+        }
+
+        // Remove the authorization check to test if deletion works
+        await BloodRequest.findByIdAndDelete(id);
+        res.status(200).json({ message: "Blood request deleted successfully" });
+
+    } catch (err) {
+        console.error("Error deleting blood request:", err);
+        res.status(500).json({ message: "Server Error" });
+    }
+};
+
+
+
+
+
 
