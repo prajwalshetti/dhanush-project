@@ -23,8 +23,7 @@ const BloodRequestSchema = new mongoose.Schema({
         required: true 
     },
     location_coordinates: { 
-        type: { lat: Number, lng: Number }, 
-        required: true 
+        type: { lat: Number, lng: Number }
     },
     urgency_level: { 
         type: String, 

@@ -3,7 +3,7 @@ import dotenv from 'dotenv'
 import cors from 'cors'
 import connectDb from './config/db.js'
 import authRoutes from './routes/AuthRoutes.js'
-
+import bloodRequestRoutes from './routes/requestRoutes.js'
 
 dotenv.config()
 connectDb();
@@ -20,7 +20,7 @@ app.get('/' ,(req,res)=>{
 })
 
 app.use("/api/auth", authRoutes); 
-
+app.use("/api/bloodrequest",bloodRequestRoutes)
 app.listen(PORT , ()=>{
     console.log("Server started successfully")
 })

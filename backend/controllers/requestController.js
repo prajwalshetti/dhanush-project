@@ -1,4 +1,4 @@
-import BloodRequest from "../models/bloodRequest";
+import BloodRequest from "../models/bloodRequest.js";
 
 // Create a blood request
 export const createBloodRequest = async(req,res)=>{
@@ -21,7 +21,7 @@ export const createBloodRequest = async(req,res)=>{
         })
     }
     catch(err){
-        console.error("Error creating blood request:", error);
+        console.error("Error creating blood request:", err);
         res.status(500).json({ message: "Server Error" });
     }
 }
