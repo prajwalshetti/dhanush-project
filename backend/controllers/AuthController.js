@@ -1,6 +1,7 @@
-// import JWT from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import User from '../models/userModel.js'
+import protectedRoute from '../middlewares/AuthMiddleware.js'
 
 export const registerController = async(req,res)=>{
     try{
@@ -83,10 +84,13 @@ export const loginController = async(req,res)=>{
         })
      }
 
+     const token = jwt.sign({userId : user._id} , process.env.JWT_SECRET ,{expiresIn : '7d'})
+
 
      return res.status(201).send({
         success : true,
-        message : "login success"
+        message : "login success",
+        token
      })
     }
     catch(err){
