@@ -22,18 +22,22 @@ const BloodRequestSchema = new mongoose.Schema({
         type: String, 
         required: true 
     },
+    location_coordinates: { 
+        type: { lat: Number, lng: Number }, 
+        required: true 
+    },
     urgency_level: { 
         type: String, 
+        enum: ['normal', 'urgent', 'emergency'], 
         required: true 
+    },
+    reason: { 
+        type: String 
     },
     status: { 
         type: String, 
         enum: ['pending', 'fulfilled', 'cancelled'], 
         default: 'pending' 
-    },
-    created_at: { 
-        type: Date, 
-        default: Date.now 
     },
     fulfilled_at: { 
         type: Date 
