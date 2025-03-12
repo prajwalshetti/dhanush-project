@@ -1,6 +1,6 @@
-backend/node_modules/
+node_modules
 .env
-rontend/node_modules/
+
 
 
 # Ignore environment variables
