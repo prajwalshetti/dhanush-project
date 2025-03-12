@@ -1,11 +1,12 @@
 node_modules
+
+# Ignore environment variables
 .env
 
 
 
-# Ignore environment variables
-backend/.env
-frontend/.env
+
+
 
 # Ignore logs
 logs/
