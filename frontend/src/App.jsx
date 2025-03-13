@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login.jsx';
 import Register from './components/Register.jsx';
+import RequestForm from './components/RequestForm.jsx';
 // import PrivateRoute from './components/PrivateRoute.jsx';  // ensure correct import path
 
 // A placeholder dashboard component
@@ -52,6 +53,7 @@ const App = () => {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/request" element={<RequestForm/>}/>
         <Route 
           path="/dashboard" 
           element={
