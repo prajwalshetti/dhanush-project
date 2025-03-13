@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { HeartPulse } from 'lucide-react'
 import axios from 'axios'
+import Home from './Home.jsx'
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -33,7 +34,7 @@ const Login = () => {
       
       if (response.data.success) {
         // No need to store token in localStorage; cookie is set automatically.
-        navigate('/dashboard')
+        navigate('/home')
       } else {
         setError(response.data.message || 'Login failed. Please try again.')
       }

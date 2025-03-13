@@ -1,14 +1,49 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await axios.get('http://localhost:8000/api/auth/logout', { withCredentials: true });
+
+      console.log("Logged out successfully");
+
+      // Redirect to login page
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error.response?.data?.message || error.message);
+    }
+  };
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  useEffect(()=>{
+      toggle()  
+
+  }, []);
+  
+
+  const toggle = async ()=>{
+      try{
+        const res = await axios.get('http://localhost:8000/api/auth/check', { withCredentials: true });
+       
+        console.log(res);
+        if(res.status == 200)
+          setIsLoggedIn(true);
+          console.log(isLoggedIn)
+      }
+      catch(err)
+      {
+        console.log(err)
+      }
+  }
 
   // Function to check if a route is active
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
+  const isActive = (path) => location.pathname === path;
 
   return (
     <nav className="bg-white border-b-2 border-gray-300 py-4 px-4 md:px-8">
@@ -24,29 +59,30 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" 
-              className={`font-medium transition-colors ${isActive('/') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`}>
+            <Link to="/" className={`font-medium transition-colors ${isActive('/') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`}>
               Home
             </Link>
-            <Link to="/request" 
-              className={`font-medium transition-colors ${isActive('/request') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`}>
+            <Link to="/request" className={`font-medium transition-colors ${isActive('/request') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`}>
               Request Blood
             </Link>
-            <Link to="/donate" 
-              className={`font-medium transition-colors ${isActive('/donate') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`}>
+            <Link to="/donate" className={`font-medium transition-colors ${isActive('/donate') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`}>
               Donate
             </Link>
-            <Link to="/profile" 
-              className={`font-medium transition-colors ${isActive('/profile') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`}>
-              My Profile
+            <Link to="/profile" className={`font-medium transition-colors ${isActive('/profile') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`}>
+              My Profile 
             </Link>
           </div>
 
-          {/* Login/Register button */}
+          {/* Login/Register & Logout Buttons */}
           <div className="hidden md:flex items-center">
-            <Link to="/login" className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors">
+            {!isLoggedIn&&<Link to="/login" className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors">
               Login / Register
-            </Link>
+            </Link>}
+
+
+            {isLoggedIn&&<button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors ml-4">
+              Logout
+            </button>}
           </div>
 
           {/* Mobile menu button */}
@@ -70,29 +106,19 @@ const Navbar = () => {
         {isMenuOpen && (
           <div className="md:hidden mt-4 pt-4 border-t border-gray-200">
             <div className="flex flex-col space-y-4">
-              <Link to="/" 
-                className={`font-medium transition-colors ${isActive('/') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`}
-                onClick={() => setIsMenuOpen(false)}>
+              <Link to="/" className={`font-medium transition-colors ${isActive('/') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`} onClick={() => setIsMenuOpen(false)}>
                 Home
               </Link>
-              <Link to="/request" 
-                className={`font-medium transition-colors ${isActive('/request') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`}
-                onClick={() => setIsMenuOpen(false)}>
+              <Link to="/request" className={`font-medium transition-colors ${isActive('/request') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`} onClick={() => setIsMenuOpen(false)}>
                 Request Blood
               </Link>
-              <Link to="/donate" 
-                className={`font-medium transition-colors ${isActive('/donate') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`}
-                onClick={() => setIsMenuOpen(false)}>
+              <Link to="/donate" className={`font-medium transition-colors ${isActive('/donate') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`} onClick={() => setIsMenuOpen(false)}>
                 Donate
               </Link>
-              <Link to="/profile" 
-                className={`font-medium transition-colors ${isActive('/profile') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`}
-                onClick={() => setIsMenuOpen(false)}>
+              <Link to="/profile" className={`font-medium transition-colors ${isActive('/profile') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`} onClick={() => setIsMenuOpen(false)}>
                 My Profile
               </Link>
-              <Link to="/login" 
-                className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors w-full text-center"
-                onClick={() => setIsMenuOpen(false)}>
+              <Link to="/login" className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors w-full text-center" onClick={() => setIsMenuOpen(false)}>
                 Login / Register
               </Link>
             </div>

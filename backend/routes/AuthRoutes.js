@@ -17,4 +17,10 @@ router.get('/check', protectedRoute, (req, res) => {
     res.status(200).json({ success: true, user: req.user })
   })
 
+  router.get('/logout', (req, res) => {
+    res.clearCookie('token');  // Replace 'token' with your actual cookie name
+    res.status(200).json({ message: 'Logged out successfully' });
+});
+
+
 export default router
