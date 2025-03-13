@@ -12,6 +12,7 @@ const RequestForm = () => {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [successMessage, setSuccessMessage] = useState("");
 
     const navigate = useNavigate();
 
@@ -23,31 +24,62 @@ const RequestForm = () => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setSuccessMessage("");
         
         try {
-            // Send the request to your backend API
+            // Send the request using cookies-based authentication
             const response = await axios.post(
                 "http://localhost:8000/api/bloodrequest/create", 
                 formData,
                 {
                     headers: {
-                        "Content-Type": "application/json",
-                        // Include the auth token from localStorage
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        "Content-Type": "application/json"
                     },
+                    withCredentials: true // This enables sending cookies with cross-origin requests
                 }
             );
             
             console.log("Blood request created:", response.data);
+            setSuccessMessage("Blood request created successfully! Redirecting to donors list...");
             
-            // Successful request - now navigate to donors list
-            navigate(`/donors?blood_group=${formData.blood_group}&location=${formData.location}`);
+            // Add a slight delay before redirecting to show the success message
+            setTimeout(() => {
+                // Successful request - now navigate to donors list
+                navigate(`/donors?blood_group=${formData.blood_group}&location=${formData.location}`);
+            }, 1500);
         } catch (err) {
             console.error("Error creating blood request:", err);
-            setError(err.response?.data?.message || "Failed to create blood request");
+            
+            // More specific error handling
+            if (err.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                if (err.response.status === 401) {
+                    setError("Authentication error: Please log in again");
+                } else {
+                    setError(err.response.data?.message || "Server error: Please try again");
+                }
+            } else if (err.request) {
+                // The request was made but no response was received
+                setError("Network error: Could not connect to server");
+            } else {
+                // Something happened in setting up the request
+                setError("Application error: Please try again");
+            }
         } finally {
             setLoading(false);
         }
+    };
+
+    // Simple validation check
+    const isFormValid = () => {
+        return (
+            formData.blood_group && 
+            formData.units_needed && 
+            formData.hospital && 
+            formData.location &&
+            formData.urgency_level
+        );
     };
 
     return (
@@ -57,6 +89,12 @@ const RequestForm = () => {
             {error && (
                 <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
                     {error}
+                </div>
+            )}
+            
+            {successMessage && (
+                <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md">
+                    {successMessage}
                 </div>
             )}
             
@@ -137,7 +175,7 @@ const RequestForm = () => {
                 <button 
                     type="submit" 
                     className="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600 disabled:bg-red-300"
-                    disabled={loading}
+                    disabled={loading || !isFormValid()}
                 >
                     {loading ? "Submitting..." : "Submit Request"}
                 </button>
