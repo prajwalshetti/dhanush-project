@@ -1,45 +1,48 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { HeartPulse } from 'lucide-react';
-import axios from 'axios';
+import React, { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { HeartPulse } from 'lucide-react'
+import axios from 'axios'
 
 const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
-  });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  })
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
-    });
-  };
+    })
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+    e.preventDefault()
+    setError('')
+    setLoading(true)
 
     try {
-      const response = await axios.post('http://localhost:8000/api/auth/login', formData);
+      const response = await axios.post(
+        'http://localhost:8000/api/auth/login',
+        formData,
+        { withCredentials: true }
+      )
       
       if (response.data.success) {
-        // Store token in localStorage
-        localStorage.setItem('token', response.data.token);
-        navigate('/dashboard');
+        // No need to store token in localStorage; cookie is set automatically.
+        navigate('/dashboard')
       } else {
-        setError(response.data.message || 'Login failed. Please try again.');
+        setError(response.data.message || 'Login failed. Please try again.')
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred during login');
+      setError(err.response?.data?.message || 'An error occurred during login')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center px-4">
@@ -116,7 +119,7 @@ const Login = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login

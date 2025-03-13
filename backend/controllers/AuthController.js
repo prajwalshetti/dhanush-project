@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import User from '../models/userModel.js'
-import protectedRoute from '../middlewares/AuthMiddleware.js'
+
 
 export const registerController = async(req,res)=>{
     try{
@@ -50,56 +50,55 @@ export const registerController = async(req,res)=>{
 }
 
 
-export const loginController = async(req,res)=>{
+export const loginController = async (req, res) => {
+  try {
+    const { email, password } = req.body
 
-
-    try{
-        const {email , password} = req.body
-
-     if(!email || !password)
-     {
-        return res.status(404).send({
-            success: false,
-            message : "login credentials failed"
-        })
-     }
-
-     const user = await User.findOne({email})
-
-     if(!user)
-     {
-        return res.status(404).send({
-            success:false,
-            message : "user not registered"
-          })
-     }
-
-     const isMatch = await bcrypt.compare(password , user.password)
-
-     if(!isMatch)
-     {
-        return res.status(404).send({
-            success : false,
-            message : "wrong login credentials"
-        })
-     }
-
-     const token = jwt.sign({userId : user._id} , process.env.JWT_SECRET ,{expiresIn : '7d'})
-
-
-     return res.status(201).send({
-        success : true,
-        message : "login success",
-        token
-     })
-    }
-    catch(err){
-        console.log(err)
-        res.status(500).send({
-            success : false,
-            message : "Failed to login",
-            error : err.message
-        })
+    if (!email || !password) {
+      return res.status(404).send({
+        success: false,
+        message: "login credentials failed"
+      })
     }
 
+    const user = await User.findOne({ email })
+
+    if (!user) {
+      return res.status(404).send({
+        success: false,
+        message: "user not registered"
+      })
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password)
+
+    if (!isMatch) {
+      return res.status(404).send({
+        success: false,
+        message: "wrong login credentials"
+      })
+    }
+
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' })
+
+    // Set token in an HttpOnly cookie
+    res.cookie("token", token, {
+      httpOnly: true, // not accessible via JavaScript
+      secure: process.env.NODE_ENV === "production", // only use HTTPS in production
+      sameSite: "strict", // helps prevent CSRF
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    })
+
+    return res.status(201).send({
+      success: true,
+      message: "login success",
+    })
+  } catch (err) {
+    console.log(err)
+    res.status(500).send({
+      success: false,
+      message: "Failed to login",
+      error: err.message
+    })
+  }
 }
