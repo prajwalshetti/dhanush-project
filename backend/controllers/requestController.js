@@ -45,6 +45,7 @@ export const getBloodRequests = async (req, res) => {
     }
 };
 
+
 export const updateBloodRequestStatus = async(req,res)=>{
     try{
        
@@ -110,7 +111,7 @@ export const getEligibleBloodRequests = async(req,res)=>{
         // Fetch blood requests that match donor's blood group and location
         const eligibleRequests = await BloodRequest.find({
             blood_group: donor.blood_group, 
-            // location: donor.location,      
+            location: donor.location,      
             status: "pending",              
         }).sort({ createdAt: -1 });
 
