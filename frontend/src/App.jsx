@@ -5,6 +5,7 @@ import Register from './components/Register.jsx'
 import Home from  './components/Home.jsx'
 import RequestForm from './components/RequestForm.jsx';
 import { AuthProvider } from './components/AuthContext.jsx';
+import Donation from './components/Donation.jsx';
 
 // import PrivateRoute from './components/PrivateRoute.jsx';  // ensure correct import path
 
@@ -59,6 +60,7 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/request" element={<RequestForm/>}/>
+        <Route path="/donate" element={<Donation/>} > </Route>
         
         <Route 
           path="/dashboard" 

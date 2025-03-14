@@ -1,4 +1,5 @@
 import React,{useState , useEffect} from 'react'
+import axios from 'axios'
 
 
 function Donation() {
@@ -9,10 +10,12 @@ function Donation() {
 
     const fetchBloodRequests = async()=>{
         try{
-            const response = await axios.get("http://localhost:8000/api/bloodrequest" , {
+            const response = await axios.get("http://localhost:8000/api/bloodrequest/eligible" , {
                 withCredentials : true
             })
+            console.log(response)
             setBloodRequests(response.data.requests)
+
         }
         catch(err)
         {
