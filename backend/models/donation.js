@@ -18,6 +18,10 @@ const DonationSchema = new mongoose.Schema({
         type: String, 
         enum: ['completed', 'pending', 'cancelled'], 
         default: 'pending' 
+    },
+    city:{
+        type:String,
+        required:true
     }
 }, { timestamps: true });
 

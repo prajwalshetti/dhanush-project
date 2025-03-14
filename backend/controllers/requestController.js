@@ -4,15 +4,15 @@ import User from "../models/userModel.js";
 // Create a blood request
 export const createBloodRequest = async(req,res)=>{
     try{
-        const { blood_group, units_needed, hospital, location, urgency_level } = req.body;
+        const { blood_group, units_needed, hospital, city, urgency_level } = req.body;
 
-        if (!blood_group || !units_needed || !hospital || !location || !urgency_level) {
+        if (!blood_group || !units_needed || !hospital || !city || !urgency_level) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
         const requester_id = req.user.id;
 
-        const bloodRequest = new BloodRequest({requester_id , blood_group , units_needed , hospital , location , urgency_level})
+        const bloodRequest = new BloodRequest({requester_id , blood_group , units_needed , hospital , city , urgency_level})
 
         await bloodRequest.save()
 
@@ -29,11 +29,11 @@ export const createBloodRequest = async(req,res)=>{
 
 export const getBloodRequests = async (req, res) => {
     try {  
-        const { blood_group, location } = req.query;
+        const { blood_group, city } = req.query;
 
         let filter = {};
         if (blood_group) filter.blood_group = blood_group;
-        if (location) filter.location = location;
+        if (city) filter.city = city;
 
         // Fetch all blood requests, sorted by newest first
         const bloodRequests = await BloodRequest.find().sort({ createdAt: -1 });
@@ -101,16 +101,16 @@ export const getEligibleBloodRequests = async(req,res)=>{
     try{
         const donorId = req.user.id;
 
-        // Fetch the donor's details (blood group and location)
-        const donor = await User.findById(donorId).select("blood_group location");
+        // Fetch the donor's details (blood group and city)
+        const donor = await User.findById(donorId).select("blood_group city");
         if (!donor) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Fetch blood requests that match donor's blood group and location
+        // Fetch blood requests that match donor's blood group and city
         const eligibleRequests = await BloodRequest.find({
             blood_group: donor.blood_group, 
-            // location: donor.location,      
+            city: donor.city,      
             status: "pending",              
         }).sort({ createdAt: -1 });
 

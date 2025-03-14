@@ -1,5 +1,5 @@
 import React,{useState , useEffect} from 'react'
-
+import axios from 'axios';
 
 function Donation() {
     
@@ -9,13 +9,14 @@ function Donation() {
 
     const fetchBloodRequests = async()=>{
         try{
-            const response = await axios.get("http://localhost:8000/api/bloodrequest" , {
+            const response = await axios.get("http://localhost:8000/api/bloodrequest/eligible" , {
                 withCredentials : true
             })
+            console.log(response)
             setBloodRequests(response.data.requests)
         }
         catch(err)
-        {
+        { console.log(err)
             setError("Failed to load blood requests. Please try again.");
         }
         finally {
@@ -45,7 +46,9 @@ function Donation() {
                 <li key={request._id} className="p-4 border rounded-lg">
                     <p><strong>Blood Group:</strong> {request.blood_group}</p>
                     <p><strong>Units Needed:</strong> {request.units_needed}</p>
+                    <p><strong>City:</strong> {request.city}</p>
                     <p><strong>Status:</strong> <span className="text-blue-600">{request.status}</span></p>
+                    
                     <button className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg">
                         Donate Now
                     </button>

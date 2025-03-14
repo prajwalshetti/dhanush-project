@@ -5,17 +5,21 @@ import Donation from '../models/donation.js'
 // @access Private
 export const registerDonation = async (req, res) =>{
     try{
-        const {request_id, donation_date, status} = req.body;
+        const {request_id, donation_date, status,city} = req.body;
 
         if(!donation_date){
             return res.status(400).json({message: "donation date is required"});
         }
+        if (!location) {
+            return res.status(400).json({ message: "donation location is required" });
+          }
 
         const newDonation = new Donation({
             donor_id : req.user.id,
             request_id: request_id || null,
             donation_date,
             status: status || "pending",
+            city
         });
 
         await newDonation.save();
