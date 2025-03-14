@@ -7,7 +7,7 @@ const UserSchema = new mongoose.Schema({
     phone: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     blood_group: { type: String, required: true },
-    city: { type: String, required: true },
+    location : { type: String, required: true },
     is_active: { type: Boolean, default: true },
     last_donation_date: { type: Date, default: null },
     health_status: { type: String, default: '' },

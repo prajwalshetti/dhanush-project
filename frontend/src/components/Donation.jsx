@@ -48,7 +48,11 @@ function Donation() {
                 <li key={request._id} className="p-4 border rounded-lg">
                     <p><strong>Blood Group:</strong> {request.blood_group}</p>
                     <p><strong>Units Needed:</strong> {request.units_needed}</p>
-                    <p><strong>City:</strong> {request.city}</p>
+                    
+
+                    <p><strong>City:</strong> {request.location}</p>
+
+
                     <p><strong>Status:</strong> <span className="text-blue-600">{request.status}</span></p>
                     
                     <button className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg">

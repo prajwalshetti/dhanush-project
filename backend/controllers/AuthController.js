@@ -6,9 +6,9 @@ import User from '../models/userModel.js'
 export const registerController = async(req,res)=>{
     try{
       
-        const {name , email , phone ,password , blood_group , city} = req.body
+        const {name , email , phone ,password , blood_group , location} = req.body
 
-        if(!name || !email || !phone || !password || !blood_group || !city)
+        if(!name || !email || !phone || !password || !blood_group || !location)
         {
             return res.send({error : 'All fields are necessary'})
         }
@@ -27,7 +27,7 @@ export const registerController = async(req,res)=>{
         const hashedPassword = await bcrypt.hash(password , salt)
 
         const newUser = new User({
-            name, email, phone, password: hashedPassword, blood_group, city 
+            name, email, phone, password: hashedPassword, blood_group, location 
         })
 
         await newUser.save()
