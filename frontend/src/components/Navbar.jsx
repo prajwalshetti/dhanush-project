@@ -21,6 +21,7 @@ const Navbar = () => {
   };
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   useEffect(()=>{
       toggle()  
 
@@ -34,7 +35,6 @@ const Navbar = () => {
         console.log(res);
         if(res.status == 200)
           setIsLoggedIn(true);
-          console.log(isLoggedIn)
       }
       catch(err)
       {
@@ -75,14 +75,15 @@ const Navbar = () => {
 
           {/* Login/Register & Logout Buttons */}
           <div className="hidden md:flex items-center">
-            {!isLoggedIn&&<Link to="/login" className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors">
-              Login / Register
-            </Link>}
-
-
-            {isLoggedIn&&<button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors ml-4">
+          {!isLoggedIn ? (
+           <Link to="/login" className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors">
+               Login / Register
+             </Link>
+              ) : (
+            <button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors ml-4">
               Logout
-            </button>}
+             </button>
+  )}
           </div>
 
           {/* Mobile menu button */}
@@ -118,9 +119,18 @@ const Navbar = () => {
               <Link to="/profile" className={`font-medium transition-colors ${isActive('/profile') ? 'text-red-600' : 'text-gray-700 hover:text-red-600'}`} onClick={() => setIsMenuOpen(false)}>
                 My Profile
               </Link>
+              {!isLoggedIn && (
               <Link to="/login" className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors w-full text-center" onClick={() => setIsMenuOpen(false)}>
                 Login / Register
               </Link>
+            )}
+
+            {isLoggedIn && (
+              <button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors w-full text-center" onClick={() => setIsMenuOpen(false)}>
+                Logout
+              </button>
+            )}
+
             </div>
           </div>
         )}

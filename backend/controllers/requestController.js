@@ -1,4 +1,5 @@
 import BloodRequest from "../models/bloodRequest.js";
+import User from "../models/userModel.js";
 
 // Create a blood request
 export const createBloodRequest = async(req,res)=>{
@@ -94,6 +95,32 @@ export const deleteBloodRequest = async (req, res) => {
         res.status(500).json({ message: "Server Error" });
     }
 };
+
+export const getEligibleBloodRequests = async(req,res)=>{
+   
+    try{
+        const donorId = req.user.id;
+
+        // Fetch the donor's details (blood group and location)
+        const donor = await User.findById(donorId).select("blood_group location");
+        if (!donor) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Fetch blood requests that match donor's blood group and location
+        const eligibleRequests = await BloodRequest.find({
+            blood_group: donor.blood_group, 
+            // location: donor.location,      
+            status: "pending",              
+        }).sort({ createdAt: -1 });
+
+        res.status(200).json({ requests: eligibleRequests });
+    }
+    catch(err)
+    {
+        res.status(500).json({ message: "Server error", error: err.message });
+    }
+}
 
 
 

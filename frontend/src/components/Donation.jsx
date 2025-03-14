@@ -1,108 +1,61 @@
-import { useState } from 'react';
+import React,{useState , useEffect} from 'react'
 
-const Donation = () => {
-    const [donationDate, setDonationDate] = useState('');
-    const [status, setStatus] = useState('pending');
-    const [requestId, setRequestId] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState('');
 
-    const handleRegisterDonation = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setMessage('');
+function Donation() {
+    
+    const [bloodRequests, setBloodRequests] = useState([]);
+    const [loading , setLoading] = useState(true)
+    const [error , setError] = useState(null)
 
-        try {
-            const token = localStorage.getItem('token'); // Assuming token is stored after login
-
-            const response = await fetch('http://localhost:8000/api/donations/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    request_id: requestId,
-                    donation_date: donationDate,
-                    status
-                })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to register donation');
-            }
-
-            setMessage('Donation registered successfully!');
-        } catch (error) {
-            setMessage(error.message);
-        } finally {
+    const fetchBloodRequests = async()=>{
+        try{
+            const response = await axios.get("http://localhost:8000/api/bloodrequest" , {
+                withCredentials : true
+            })
+            setBloodRequests(response.data.requests)
+        }
+        catch(err)
+        {
+            setError("Failed to load blood requests. Please try again.");
+        }
+        finally {
             setLoading(false);
         }
-    };
+    }
 
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-                <h2 className="text-2xl font-bold text-center text-red-500 mb-4">Register a Donation</h2>
-                
-                {message && (
-                    <div className={`text-center ${message.includes('successfully') ? 'text-green-500' : 'text-red-500'} mb-4`}>
-                        {message}
-                    </div>
-                )}
+    useEffect(()=>{
+        fetchBloodRequests()
+    } , [])
 
-                <form onSubmit={handleRegisterDonation} className="space-y-4">
-                    {/* Request ID */}
-                    <div>
-                        <label className="block text-gray-600 mb-1">Request ID (Optional)</label>
-                        <input
-                            type="text"
-                            value={requestId}
-                            onChange={(e) => setRequestId(e.target.value)}
-                            className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-red-400"
-                        />
-                    </div>
 
-                    {/* Donation Date */}
-                    <div>
-                        <label className="block text-gray-600 mb-1">Donation Date</label>
-                        <input
-                            type="date"
-                            value={donationDate}
-                            onChange={(e) => setDonationDate(e.target.value)}
-                            className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-red-400"
-                            required
-                        />
-                    </div>
+    
+  return (
+    <div className="max-w-3xl mx-auto p-6">
+    <h2 className="text-2xl font-bold mb-4 text-center">Available Blood Requests</h2>
 
-                    {/* Status */}
-                    <div>
-                        <label className="block text-gray-600 mb-1">Status</label>
-                        <select
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                            className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-red-400"
-                        >
-                            <option value="pending">Pending</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-                    </div>
-
-                    {/* Submit Button */}
-                    <button
-                        type="submit"
-                        className="w-full bg-red-500 text-white font-bold py-2 rounded hover:bg-red-600 transition"
-                        disabled={loading}
-                    >
-                        {loading ? 'Registering...' : 'Register Donation'}
+    {loading ? (
+        <p className="text-center text-gray-600">Loading...</p>
+    ) : error ? (
+        <p className="text-center text-red-500">{error}</p>
+    ) : bloodRequests.length === 0 ? (
+        <p className="text-center text-gray-600">No blood requests available.</p>
+    ) : (
+        <ul className="space-y-4">
+            {bloodRequests.map((request) => (
+                <li key={request._id} className="p-4 border rounded-lg">
+                    <p><strong>Blood Group:</strong> {request.blood_group}</p>
+                    <p><strong>Units Needed:</strong> {request.units_needed}</p>
+                    <p><strong>Status:</strong> <span className="text-blue-600">{request.status}</span></p>
+                    <button className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg">
+                        Donate Now
                     </button>
-                </form>
-            </div>
-        </div>
-    );
-};
+                </li>
+            ))}
+        </ul>
+    )}
+</div>
+  )
+}
 
-export default Donation;
+export default Donation
+

@@ -4,6 +4,7 @@ import Login from './components/Login.jsx';
 import Register from './components/Register.jsx'
 import Home from  './components/Home.jsx'
 import RequestForm from './components/RequestForm.jsx';
+import { AuthProvider } from './components/AuthContext.jsx';
 
 // import PrivateRoute from './components/PrivateRoute.jsx';  // ensure correct import path
 
@@ -50,9 +51,11 @@ const Dashboard = () => {
 
 const App = () => {
   return (
+
+  <AuthProvider>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/request" element={<RequestForm/>}/>
@@ -63,9 +66,11 @@ const App = () => {
               <Dashboard />
           } 
         />
-        <Route path="/home" element={<Home/>}/>
+        <Route path="/" element={<Home/>}/>
       </Routes>
     </BrowserRouter>
+  </AuthProvider>
+    
   );
 };
 

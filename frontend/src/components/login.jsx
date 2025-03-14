@@ -34,7 +34,7 @@ const Login = () => {
       
       if (response.data.success) {
         // No need to store token in localStorage; cookie is set automatically.
-        navigate('/home')
+        navigate('/')
       } else {
         setError(response.data.message || 'Login failed. Please try again.')
       }
