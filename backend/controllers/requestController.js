@@ -123,7 +123,28 @@ export const getEligibleBloodRequests = async(req,res)=>{
     }
 }
 
+export const getUserBloodRequest = async(req,res)=>{
+    try{
+      const userId = req.user.id
 
+      console.log("User ID from request:", userId);
+
+      const bloodRequests = await BloodRequest.find({
+        requester_id: userId
+      }).sort({createdAt : -1})
+
+      console.log("bloodRequests");
+      console.log(bloodRequests);
+
+      res.status(200).json(Array.isArray(bloodRequests) ? bloodRequests : []);
+
+    }
+    catch(err)
+    {
+        console.error("Error fetching user blood requests:", err);
+        res.status(500).json({ message: "Server Error" });
+    }
+}
 
 
 

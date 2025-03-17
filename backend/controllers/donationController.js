@@ -1,35 +1,36 @@
 import Donation from '../models/donation.js'
+import BloodRequest from '../models/bloodRequest.js';
 
 // @desc Register a new donation
 // @route POST /api/donations/register
 // @access Private
-export const registerDonation = async (req, res) =>{
-    try{
-        const {request_id, donation_date, status,city} = req.body;
+// export const registerDonation = async (req, res) =>{
+//     try{
+//         const {request_id, donation_date, status,city} = req.body;
 
-        if(!donation_date){
-            return res.status(400).json({message: "donation date is required"});
-        }
-        if (!location) {
-            return res.status(400).json({ message: "donation location is required" });
-          }
+//         if(!donation_date){
+//             return res.status(400).json({message: "donation date is required"});
+//         }
+//         if (!location) {
+//             return res.status(400).json({ message: "donation location is required" });
+//           }
 
-        const newDonation = new Donation({
-            donor_id : req.user.id,
-            request_id: request_id || null,
-            donation_date,
-            status: status || "pending",
-            city
-        });
+//         const newDonation = new Donation({
+//             donor_id : req.user.id,
+//             request_id: request_id || null,
+//             donation_date,
+//             status: status || "pending",
+//             city
+//         });
 
-        await newDonation.save();
-        res.status(201).json({message: "donation registered successfully", donation:newDonation});
+//         await newDonation.save();
+//         res.status(201).json({message: "donation registered successfully", donation:newDonation});
 
-    }
-    catch(error){
-        res.status(500).json({message:"server error", error: error.message});
-    }
-};
+//     }
+//     catch(error){
+//         res.status(500).json({message:"server error", error: error.message});
+//     }
+// };
 
 // @desc Register a new donation
 // @route POST /api/donations/register
@@ -73,3 +74,48 @@ export const updateDonationStatus = async (req, res) => {
         res.status(500).json({ message: "Server Error", error: error.message });
     }
 };
+
+export const sendDonationRequest = async(req,res)=>{
+
+      try{
+        const { request_id } = req.body;
+         
+        const bloodRequest = await BloodRequest.findById(request_id);
+        if (!bloodRequest) {
+            return res.status(404).json({ message: "Blood request not found" });
+        }
+
+         // Check if donor has already sent a request
+         const existingDonation = await Donation.findOne({
+            donor_id: req.user.id,
+            request_id,
+        });
+
+        if (existingDonation) {
+            return res.status(400).json({ message: "You have already requested to donate for this request." });
+        }
+         
+
+        // Create new donation request
+        const newDonation = new Donation({
+            donor_id: req.user.id,
+            request_id,
+            status: "pending",
+        });
+
+        await newDonation.save();
+
+
+        //Later Notify maadbeku..!!
+
+        res.status(201).json({ 
+            message: "Donation request sent successfully. Waiting for requester to accept.", 
+            donation: newDonation 
+        });
+
+      }
+      catch(err)
+      {
+        res.status(500).json({ message: "Server error", error: err.message });
+      }
+}

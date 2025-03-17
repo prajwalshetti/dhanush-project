@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
+import axios from 'axios';
 
 const Home = () => {
   // State management
@@ -10,21 +11,39 @@ const Home = () => {
   
   // Simulate fetching user requests from API
   useEffect(() => {
-    // Mock data - in a real app, fetch from backend
-    const mockCurrentRequests = [
-      { id: 1, bloodType: 'O+', location: 'City Hospital', status: 'active', createdAt: '2025-03-10' }
-    ];
-    
-    const mockPastRequests = [
-      { id: 2, bloodType: 'AB-', location: 'Medical Center', status: 'completed', createdAt: '2025-02-25' },
-      { id: 3, bloodType: 'B+', location: 'Regional Hospital', status: 'cancelled', createdAt: '2025-02-15' }
-    ];
-    
-    setUserRequests(mockCurrentRequests);
-    setPastRequests(mockPastRequests);
-    setHasActiveRequests(mockCurrentRequests.length > 0);
-  }, []);
+    const fetchUserRequests = async () => {
+      try {
+        const response = await axios.get("http://localhost:8000/api/bloodrequest/user", {
+          withCredentials: true, // Ensures cookies are sent
+        });
 
+        console.log("API Response11:", response);
+  
+        // Extract data
+        const requests = response.data;
+        // console.log("Fetched Requests:", requests);
+
+        // console.log("Fetched Requests:", requests);
+  
+        // Filter active and past requests
+        const activeRequests = requests.filter(req => req.status === 'pending');
+        const pastRequests = requests.filter(req => req.status == 'fullfilled');
+
+        // console.log("Active Requests:", activeRequests);
+        // console.log("Past Requests:", pastRequests);
+  
+        // Update state
+        setUserRequests(activeRequests);
+        setPastRequests(pastRequests);
+        setHasActiveRequests(activeRequests.length > 0);
+      } catch (error) {
+        console.error("Error fetching blood requests:", error);
+      }
+    };
+  
+    fetchUserRequests();
+  }, []);
+  
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header with title */}
@@ -73,8 +92,8 @@ const Home = () => {
                 <div key={request.id} className="mb-2 last:mb-0">
                   <div className="flex justify-between items-center">
                     <div>
-                      <span className="font-semibold mr-2">Blood Type: {request.bloodType}</span>
-                      <span className="text-gray-600">{request.location}</span>
+                      <span className="font-semibold mr-2">Blood Type: {request.blood_group}</span>
+                      <span className="text-gray-600">Location : {request.location}</span>
                     </div>
                     <div>
                       <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
@@ -100,8 +119,8 @@ const Home = () => {
                 <div key={request.id} className="mb-2 last:mb-0 p-2 border-b last:border-b-0">
                   <div className="flex justify-between items-center">
                     <div>
-                      <span className="font-semibold mr-2">Blood Type: {request.bloodType}</span>
-                      <span className="text-gray-600">{request.location}</span>
+                      <span className="font-semibold mr-2">Blood Type: {request.blood_group}</span>
+                      <span className="text-gray-600">Location : {request.location}</span>
                     </div>
                     <div className="flex items-center">
                       <span className={`px-2 py-1 rounded-full text-sm font-medium ${

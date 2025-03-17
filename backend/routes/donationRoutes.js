@@ -1,16 +1,18 @@
 import express from "express";
-import { registerDonation, getUserDonations,  updateDonationStatus} from '../controllers/donationController.js'
-import AuthMiddleware from "../middlewares/AuthMiddleware.js";
+import { getUserDonations,  updateDonationStatus, sendDonationRequest} from '../controllers/donationController.js'
+import ProtectedRoute from "../middlewares/AuthMiddleware.js";
 
 const router = express.Router();
 
-// Register a new donation
-router.post("/register", AuthMiddleware, registerDonation);
+// // Register a new donation(not using right now)
+// router.post("/register", ProtectedRoute, registerDonation);
+
+router.post('/request' ,ProtectedRoute , sendDonationRequest)
 
 // Get donation history of a user
-router.get("/history", AuthMiddleware, getUserDonations);
+router.get("/", ProtectedRoute, getUserDonations);
 
 // Update donation status (completed, pending, cancelled)
-router.put("/update/:donationId", AuthMiddleware, updateDonationStatus);
+router.put("/update/:donationId", ProtectedRoute, updateDonationStatus);
 
 export default router;
