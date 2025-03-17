@@ -1,3 +1,4 @@
+import Donation from "../models/donation.js";
 import BloodRequest from "../models/bloodRequest.js";
 import User from "../models/userModel.js";
 
@@ -146,6 +147,31 @@ export const getUserBloodRequest = async(req,res)=>{
     }
 }
 
+// @route GET /api/requests/donations-received
+// to get donationrequests for a particular request
 
+export const getReceivedDonations = async(req,res)=>{
+    try{
+        const userBloodRequests = await BloodRequest.find({ requester_id: req.user.id }).select("_id") // gives an array of objects
+       
+        if (!userBloodRequests.length) {
+            return res.status(200).json({ donations: [] }); // No donations if user has no requests
+        }
+
+        const bloodRequestIds = userBloodRequests.map(req => req._id);  //gives an array which stores ids(not in object form)
+
+        const donations = await Donation.find({ request_id: { $in: bloodRequestIds } })
+            .populate("donor_id", "name email")
+            .populate("request_id", "blood_group units_needed status");
+
+         res.status(200).json({ donations });
+
+
+    }
+    catch(err)
+    {
+        res.status(500).json({ message: "Server error", error: err.message });
+    }
+}
 
 

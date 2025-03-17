@@ -1,4 +1,4 @@
-import { createBloodRequest, getEligibleBloodRequests } from "../controllers/requestController.js";
+import { createBloodRequest, getEligibleBloodRequests, getReceivedDonations } from "../controllers/requestController.js";
 import { getBloodRequests } from "../controllers/requestController.js";
 import { updateBloodRequestStatus } from "../controllers/requestController.js";
 import { deleteBloodRequest } from "../controllers/requestController.js";
@@ -19,4 +19,6 @@ router.get("/eligible" , protectedRoute , getEligibleBloodRequests)
 router.delete("/:id", deleteBloodRequest);
 
 router.get("/user", protectedRoute, getUserBloodRequest);
+
+router.get("/donations-received",protectedRoute , getReceivedDonations)
 export default router;
