@@ -8,11 +8,14 @@ const RequestForm = () => {
         units_needed: "",
         hospital: "",
         location: "",
+        latitude: null,
+        longitude: null,
         urgency_level: "normal",
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState("");
+    const [locationStatus, setLocationStatus] = useState("idle"); // idle, loading, success, error
 
     const navigate = useNavigate();
 
@@ -20,11 +23,62 @@ const RequestForm = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    function gotLocation(position) {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        
+        // Store latitude and longitude as separate fields
+        setFormData(prevState => ({
+            ...prevState,
+            latitude: latitude,
+            longitude: longitude
+        }));
+        
+        // Update the location status to show success
+        setLocationStatus("success");
+        
+        // Debug logs
+        console.log("Location fetched:", { latitude, longitude });
+        console.log("Updated formData:", {
+            ...formData,
+            latitude: latitude,
+            longitude: longitude
+        });
+    }
+    
+    const getLocation = () => {
+        setLocationStatus("loading");
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                gotLocation,
+                (error) => {
+                    console.error("Error getting location:", error);
+                    setLocationStatus("error");
+                    setError("Could not get your location. Please check your browser permissions.");
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            );
+        } else {
+            setLocationStatus("error");
+            setError("Geolocation is not supported by your browser.");
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
         setSuccessMessage("");
+        
+        // Double check that latitude and longitude exist before submitting
+        if (formData.latitude === null || formData.longitude === null) {
+            setError("Please get your GPS location before submitting");
+            setLoading(false);
+            return;
+        }
+        
+        console.log("Submitting data:", formData);
         
         try {
             // Send the request using cookies-based authentication
@@ -54,6 +108,7 @@ const RequestForm = () => {
             if (err.response) {
                 // The request was made and the server responded with a status code
                 // that falls out of the range of 2xx
+                console.log(err)
                 if (err.response.status === 401) {
                     setError("Authentication error: Please log in again");
                 } else {
@@ -78,7 +133,9 @@ const RequestForm = () => {
             formData.units_needed && 
             formData.hospital && 
             formData.location &&
-            formData.urgency_level
+            formData.urgency_level &&
+            formData.latitude !== null &&
+            formData.longitude !== null
         );
     };
 
@@ -147,14 +204,40 @@ const RequestForm = () => {
 
                 <div>
                     <label className="block text-gray-700 font-medium">Location</label>
-                    <input
-                        type="text"
-                        name="location"
-                        className="w-full p-2 border rounded-md focus:ring focus:ring-red-300"
-                        onChange={handleChange}
-                        value={formData.location}
-                        required
-                    />
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            name="location"
+                            className="flex-1 p-2 border rounded-md focus:ring focus:ring-red-300"
+                            onChange={handleChange}
+                            value={formData.location}
+                            required
+                            placeholder="Enter your location"
+                        />
+                        <button
+                            type="button"
+                            onClick={getLocation}
+                            className="bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-600 flex-shrink-0"
+                            disabled={locationStatus === "loading"}
+                        >
+                            {locationStatus === "loading" ? "Getting..." : "Get GPS"}
+                        </button>
+                    </div>
+                    {locationStatus === "success" && (
+                        <div className="mt-1 text-sm text-green-600">
+                            ✓ GPS location detected
+                        </div>
+                    )}
+                    {locationStatus === "error" && (
+                        <div className="mt-1 text-sm text-red-600">
+                            Could not get location. Please try again.
+                        </div>
+                    )}
+                    {formData.latitude !== null && formData.longitude !== null && (
+                        <div className="mt-1 text-xs text-gray-500">
+                            Coordinates: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                        </div>
+                    )}
                 </div>
 
                 <div>
