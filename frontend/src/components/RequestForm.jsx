@@ -99,7 +99,7 @@ const RequestForm = () => {
             // Add a slight delay before redirecting to show the success message
             setTimeout(() => {
                 // Successful request - now navigate to donors list
-                navigate(`/donors?blood_group=${formData.blood_group}&location=${formData.location}`);
+                navigate(`/`);
             }, 1500);
         } catch (err) {
             console.error("Error creating blood request:", err);
