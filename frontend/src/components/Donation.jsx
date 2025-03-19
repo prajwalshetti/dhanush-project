@@ -49,7 +49,8 @@ function Donation() {
     }
   };
 
-  useEffect(() => {
+  
+  (() => {
     fetchBloodRequests();
   }, []);
 
