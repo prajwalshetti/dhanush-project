@@ -6,7 +6,7 @@ import Home from  './components/Home.jsx'
 import RequestForm from './components/RequestForm.jsx';
 import { AuthProvider } from './components/AuthContext.jsx';
 import Donation from './components/Donation.jsx';
-
+import Profile from  './components/Profile.jsx'
 // import PrivateRoute from './components/PrivateRoute.jsx';  // ensure correct import path
 
 // A placeholder dashboard component
@@ -56,19 +56,14 @@ const App = () => {
   <AuthProvider>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/request" element={<RequestForm/>}/>
-        <Route path='/donate' element = {<Donation/>}></Route>
-        
-        <Route 
-          path="/dashboard" 
-          element={
-              <Dashboard />
-          } 
-        />
-        <Route path="/" element={<Home/>}/>
+        <Route path="/"           element={<Home />} />
+        <Route path="/login"      element={<Login />} />
+        <Route path="/register"   element={<Register />} />
+        <Route path="/request"    element={<RequestForm/>}/>
+        <Route path='/donate'     element = {<Donation/>}></Route>
+        <Route path='/profile'    element={<Profile/>}/>
+        <Route path="/dashboard"  element={<Dashboard />} />
+        <Route path="/"           element={<Home/>}/>
       </Routes>
     </BrowserRouter>
   </AuthProvider>
