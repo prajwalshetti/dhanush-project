@@ -50,7 +50,7 @@ function Donation() {
   };
 
   
-  (() => {
+  useEffect(() => {
     fetchBloodRequests();
   }, []);
 
