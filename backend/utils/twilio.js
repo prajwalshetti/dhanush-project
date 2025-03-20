@@ -11,10 +11,15 @@ const client = twilio(
 
 export const sendSMS = async(to,message)=>{
     try{
+        let formattedTo = to;
+        if (!formattedTo.startsWith('+')) {
+          formattedTo = '+91' + formattedTo; // Adjust this if you're not in India
+        }
+
         const response = await client.messages.create({
             body : message,
             from: process.env.TWILIO_PHONE_NUMBER,
-            to : to,
+            to : formattedTo,
         })
 
         console.log("SMS sent successfully:", response.sid);
@@ -22,9 +27,9 @@ export const sendSMS = async(to,message)=>{
     }
     catch(err)
     {
-        console.error("Error sending SMS:", error);
+        console.error("Error sending SMS:", err);
         throw err;
     }
 
-    
+
 }

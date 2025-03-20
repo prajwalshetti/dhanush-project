@@ -1,8 +1,20 @@
-// DonorInfoModal.jsx
-import React from "react";
+import React, { useEffect } from "react";
+import { toast } from "react-toastify";
 
 const DonorInfoModal = ({ currentDonorInfo, onClose }) => {
   if (!currentDonorInfo) return null;
+  
+  useEffect(() => {
+    // Show toast notification when the modal is opened
+    toast.success("Donor and requester information exchanged. Check SMS for details.", {
+      position: "top-right",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
+  }, []);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

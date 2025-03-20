@@ -1,9 +1,10 @@
-// Home.jsx
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 import DonorInfoModal from "./DonorInfoModal";
 import DonationRequests from "./DonationRequests";
 import CurrentRequests from "./CurrentRequests";
@@ -40,6 +41,7 @@ const Home = () => {
       setHasActiveRequests(activeRequests.length > 0);
     } catch (error) {
       console.error("Error fetching blood requests:", error);
+      toast.error("Failed to fetch your blood requests. Please try again later.");
     }
   };
 
@@ -64,6 +66,7 @@ const Home = () => {
       setCompletedDonations(completedDonationsMap);
     } catch (err) {
       console.error("Error fetching received donations:", err);
+      toast.error("Failed to fetch received donations. Please try again later.");
     }
   };
 
@@ -94,7 +97,15 @@ const Home = () => {
             requester: donationResponse.data.requesterInfo,
           });
           setShowDonorInfo(true);
+          
+          // Toast notification will be handled in the DonorInfoModal component
         }
+        
+        toast.success(`Donation status updated to ${status}!`);
+      } else if (status === "rejected") {
+        toast.info("Donation has been rejected.");
+      } else {
+        toast.success(`Donation status updated to ${status}!`);
       }
 
       // Refresh data after updates
@@ -102,7 +113,7 @@ const Home = () => {
       await fetchReceivedDonations();
     } catch (err) {
       console.error("Error updating status:", err);
-      alert("Failed to update status. Please try again.");
+      toast.error("Failed to update status. Please try again.");
     } finally {
       setIsUpdating(false);
     }
@@ -119,7 +130,9 @@ const Home = () => {
       });
       setShowDonorInfo(true);
     } else {
-      alert("Donor information not available");
+      toast.error("Donor information not available", {
+        position: "top-center",
+      });
     }
   };
 
@@ -130,6 +143,7 @@ const Home = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <ToastContainer position="top-right" autoClose={5000} />
       <h1 className="text-3xl font-bold text-center my-4">
         Blood Donation & Emergency Platform
       </h1>
