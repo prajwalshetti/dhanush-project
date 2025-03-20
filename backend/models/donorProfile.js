@@ -17,6 +17,8 @@ const DonorProfileSchema = new mongoose.Schema({
     eligibility_date: { 
         type: Date 
     },
+   
+
     badges: [{ 
         type: String 
     }]

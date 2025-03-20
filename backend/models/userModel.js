@@ -11,6 +11,11 @@ const UserSchema = new mongoose.Schema({
     is_active: { type: Boolean, default: true },
     last_donation_date: { type: Date, default: null },
     health_status: { type: String, default: '' },
+    profilePicture: 
+    { 
+        type: String, 
+        default: null
+    },
 }, { timestamps: true });
 
 
