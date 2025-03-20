@@ -11,6 +11,9 @@ const Home = () => {
   const [hasActiveRequests, setHasActiveRequests] = useState(false);
   const [donations, setDonations] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showDonorInfo, setShowDonorInfo] = useState(false);
+  const [currentDonorInfo, setCurrentDonorInfo] = useState(null);
+  const [completedDonations, setCompletedDonations] = useState({});
   
   // Fetch user requests
   const fetchUserRequests = async () => {
@@ -22,7 +25,7 @@ const Home = () => {
 
       // Filter active and past requests
       const activeRequests = requests.filter(req => req.status === 'pending');
-      const pastRequests = requests.filter(req => req.status === 'fullfilled');
+      const pastRequests = requests.filter(req => req.status === 'fulfilled' || req.status === 'cancelled');
 
       setUserRequests(activeRequests);
       setPastRequests(pastRequests);
@@ -38,29 +41,76 @@ const Home = () => {
       const response = await axios.get("http://localhost:8000/api/bloodrequest/donations-received", {
         withCredentials: true,
       });
-      setDonations(response.data.donations);
+      
+      const donationsData = response.data.donations || [];
+      setDonations(donationsData);
+      
+      // Create a map of completed donations to easily find donor info for past requests
+      const completedDonationsMap = {};
+      donationsData.forEach(donation => {
+        if (donation.status === 'completed' && donation.request_id) {
+          completedDonationsMap[donation.request_id._id] = donation;
+        }
+      });
+      setCompletedDonations(completedDonationsMap);
     } catch (err) {
       console.error("Error fetching received donations:", err);
     }
   };
 
   // Update donation status
-  const handleUpdateStatus = async (donationId, status) => {
+  const handleUpdateStatus = async (donationId, status, requestId) => {
     setIsUpdating(true);
     try {
-      await axios.put(
+      // Update donation status
+      const donationResponse = await axios.put(
         `http://localhost:8000/api/donations/update/${donationId}`, 
-        { status }, // Payload key remains 'status'
+        { status }, 
         { withCredentials: true }
       );
       
-      // Refresh donations list after update
+      // If donation is completed, update the blood request status to fulfilled
+      if (status === "completed" && requestId) {
+        const requestResponse = await axios.patch(
+          `http://localhost:8000/api/bloodrequest/${requestId}/status`,
+          { status: "fulfilled" },
+          { withCredentials: true }
+        );
+        
+        // Store donor information for viewing later
+        if (donationResponse.data.donorInfo) {
+          setCurrentDonorInfo({
+            donation: donationResponse.data.donation,
+            donor: donationResponse.data.donorInfo,
+            requester: donationResponse.data.requesterInfo
+          });
+          setShowDonorInfo(true);
+        }
+      }
+      
+      // Refresh data after updates
+      await fetchUserRequests();
       await fetchReceivedDonations();
     } catch (err) {
-      console.error("Error updating donation status:", err);
-      alert("Failed to update donation status. Please try again.");
+      console.error("Error updating status:", err);
+      alert("Failed to update status. Please try again.");
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  // View donor information for a past request
+  const viewDonorInfo = (requestId) => {
+    const donation = completedDonations[requestId];
+    if (donation) {
+      setCurrentDonorInfo({
+        donation: donation,
+        donor: donation.donor_id,
+        requester: { request: donation.request_id }
+      });
+      setShowDonorInfo(true);
+    } else {
+      alert("Donor information not available");
     }
   };
 
@@ -76,6 +126,34 @@ const Home = () => {
       </h1>
       <Navbar/>
       <div className="flex-grow px-4">
+        {/* Donor Info Modal */}
+        {showDonorInfo && currentDonorInfo && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+              <h2 className="text-2xl font-bold mb-4 text-green-600">Donation Information</h2>
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold mb-2">Donor Information</h3>
+                <p><span className="font-medium">Name:</span> {currentDonorInfo.donor.name}</p>
+                <p><span className="font-medium">Email:</span> {currentDonorInfo.donor.email}</p>
+                <p><span className="font-medium">Phone:</span> {currentDonorInfo.donor.phone || 'N/A'}</p>
+              </div>
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold mb-2">Request Details</h3>
+                <p><span className="font-medium">Blood Group:</span> {currentDonorInfo.donation.request_id?.blood_group || 'N/A'}</p>
+                <p><span className="font-medium">Status:</span> {currentDonorInfo.donation.status}</p>
+              </div>
+              <div className="text-right">
+                <button 
+                  onClick={() => setShowDonorInfo(false)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="border-2 border-gray-800 rounded-lg p-6 flex flex-col items-center justify-center hover:bg-gray-100 transition-colors">
             <Link to="/request" className="text-xl font-bold">Request</Link>
@@ -100,7 +178,7 @@ const Home = () => {
             <p className="text-gray-600">No donation requests received yet.</p>
           ) : (
             <div className="bg-white rounded-lg shadow-md">
-              {donations.map((donation) => (
+              {donations.filter(d => d.status === 'pending').map((donation) => (
                 <div key={donation._id} className="p-4 border-b last:border-b-0">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div>
@@ -138,7 +216,7 @@ const Home = () => {
                   {donation.status === "pending" && (
                     <div className="mt-3 flex justify-end space-x-2">
                       <button
-                        onClick={() => handleUpdateStatus(donation._id, "completed")}
+                        onClick={() => handleUpdateStatus(donation._id, "completed", donation.request_id._id)}
                         disabled={isUpdating}
                         className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors disabled:opacity-50"
                       >
@@ -172,7 +250,7 @@ const Home = () => {
                       <span className="text-gray-600">Location: {request.location}</span>
                     </div>
                     <div>
-                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
                         {request.status}
                       </span>
                     </div>
@@ -199,15 +277,27 @@ const Home = () => {
                     </div>
                     <div className="flex items-center">
                       <span className={`px-2 py-1 rounded-full text-sm font-medium ${
-                        request.status === 'fullfilled'
-                          ? 'bg-blue-100 text-blue-800'
+                        request.status === 'fulfilled'
+                          ? 'bg-green-100 text-green-800'
                           : 'bg-gray-100 text-gray-800'
                       }`}>
                         {request.status}
                       </span>
-                      <span className="text-xs text-gray-500 ml-2">{request.createdAt}</span>
+                      <span className="text-xs text-gray-500 ml-2">
+                        {new Date(request.createdAt).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
+                  {request.status === 'fulfilled' && completedDonations[request._id] && (
+                    <div className="mt-2">
+                      <button
+                        onClick={() => viewDonorInfo(request._id)}
+                        className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                      >
+                        View Donor Info
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

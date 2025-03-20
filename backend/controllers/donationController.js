@@ -1,5 +1,6 @@
 import Donation from '../models/donation.js'
 import BloodRequest from '../models/bloodRequest.js';
+import User from '../models/userModel.js'
 
 // @desc Register a new donation
 // @route POST /api/donations/register
@@ -54,26 +55,50 @@ export const getUserDonations  = async (req, res) => {
 // @access Private
 export const updateDonationStatus = async (req, res) => {
     try {
-        const { donationId } = req.params;
-        const { status } = req.body;
-
-        if (!["completed", "pending", "cancelled"].includes(status)) {
-            return res.status(400).json({ message: "Invalid status update" });
-        }
-
-        const donation = await Donation.findById(donationId);
-        if (!donation) {
-            return res.status(404).json({ message: "Donation not found" });
-        }
-
-        donation.status = status;
-        await donation.save();
-
-        res.status(200).json({ message: "Donation status updated", donation });
-    } catch (error) {
-        res.status(500).json({ message: "Server Error", error: error.message });
+      const { donationId } = req.params;
+      const { status } = req.body;
+      
+      // Validate status
+      const validStatuses = ["pending", "completed", "cancelled"];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status value" });
+      }
+      
+      // Find and update the donation
+      const donation = await Donation.findByIdAndUpdate(
+        donationId,
+        { status },
+        { new: true }
+      ).populate("request_id donor_id");
+      
+      if (!donation) {
+        return res.status(404).json({ message: "Donation not found" });
+      }
+      
+      // If donation is completed, update the associated blood request status to fulfilled
+      if (status === "completed" && donation.request_id) {
+        await BloodRequest.findByIdAndUpdate(
+          donation.request_id._id,
+          { status: "fulfilled", fulfilled_at: new Date() },
+          { new: true }
+        );
+      }
+      
+      // Get donor and requester information
+      const donorInfo = await User.findById(donation.donor_id).select("name email phone");
+      const requesterInfo = await User.findById(donation.request_id.requester_id).select("name email phone");
+      
+      res.status(200).json({
+        message: `Donation status updated to ${status}`,
+        donation,
+        donorInfo,
+        requesterInfo
+      });
+    } catch (err) {
+      console.error("Error updating donation status:", err);
+      res.status(500).json({ message: "Server Error" });
     }
-};
+  };
 
 export const sendDonationRequest = async(req,res)=>{
 
