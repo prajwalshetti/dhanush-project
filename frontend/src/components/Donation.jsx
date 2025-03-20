@@ -50,9 +50,10 @@ function Donation() {
   };
 
   
-  (() => {
+  useEffect(() => {
     fetchBloodRequests();
   }, []);
+  
 
   // Handle "Donate Now" Click
   const handleDonateNow = async (requestId) => {
