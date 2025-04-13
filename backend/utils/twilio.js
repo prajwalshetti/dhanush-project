@@ -13,7 +13,7 @@ export const sendSMS = async(to,message)=>{
     try{
         let formattedTo = to;
         if (!formattedTo.startsWith('+')) {
-          formattedTo = '+91' + formattedTo; // Adjust this if you're not in India
+          formattedTo = '+91' + formattedTo; 
         }
 
         const response = await client.messages.create({

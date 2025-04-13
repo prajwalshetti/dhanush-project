@@ -9,6 +9,11 @@ import donationRoutes from './routes/donationRoutes.js'
 import userProfileRoutes from './routes/userProfile.js'
 //import uploadRoutes from './routes/uploadRoutes.js';
 import uploadRoutes from "./routes/uploadRoutes.js";
+import http from 'http'
+import {Server} from 'socket.io';
+
+
+
 
 
 
@@ -18,9 +23,48 @@ connectDb()
 const PORT = process.env.PORT || 8000
 
 const app = express()
+const server = http.createServer(app);
+
+const io = new Server(server , {
+  cors :{
+    origin : 'http://localhost:5173',
+    credentials : true
+  }
+})
+
+export {io};//exporting io globally so that can use it from wherever needed i.e controllers , middlewares
 
 app.use(express.json())
 app.use(cookieParser())
+
+export const connectedDonors = new Map();
+
+io.on("connection",(socket)=>{
+    console.log("A new user connected : ",socket.id);
+
+    socket.on('registerDonor' , ({userId , blood_group , location})=>{
+      connectedDonors.set(socket.id , {userId , blood_group , location})
+      console.log(`New user connected: (${userId})`);
+    })
+
+    socket.on('newDonationRequest', (donationData) => {
+      // Broadcast to all connected users (the requester will receive this)
+      socket.broadcast.emit('newDonationRequest', donationData);
+      console.log(`New donation request sent: ${donationData.donationId}`);
+    });
+
+    // Handle donation status updates
+    socket.on('donationStatusUpdated', (statusData) => {
+      // Broadcast to all connected users (the donor will receive this)
+      socket.broadcast.emit('donationStatusUpdated', statusData);
+      console.log(`Donation status updated: ${statusData.donationId} to ${statusData.status}`);
+    });
+
+    socket.on("disconnect" ,()=>{
+      connectedDonors.delete(socket.id)
+       console.log("A user disconnected",socket.id);
+    })
+})
 
 // CORS configuration: allow credentials and set the frontend origin.
 app.use(cors({
@@ -35,24 +79,12 @@ app.get('/', (req, res) => {
 app.use("/api/auth", authRoutes)
 app.use("/api/bloodrequest", bloodRequestRoutes)
 app.use("/api/donations", donationRoutes)
-app.use("/api/userprofile",userProfileRoutes)
-app.use("/uploads", express.static("backend/uploads"));
+app.use("/api/user",userProfileRoutes)
+
 app.use("/api/upload", uploadRoutes);
-// Make sure this path is correct - it should be the absolute path to your uploads folder
-// app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-//app.use("/api/upload", uploadRoutes);
-// const uploadsDir = path.join(__dirname, 'uploads');
-// if (!fs.existsSync(uploadsDir)) {
-//   try {
-//     fs.mkdirSync(uploadsDir, { recursive: true });
-//     console.log(`Created uploads directory at ${uploadsDir}`);
-//   } catch (err) {
-//     console.error(`Failed to create uploads directory: ${err.message}`);
-//   }
-// }
 
 
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log("Server started successfully")
 })

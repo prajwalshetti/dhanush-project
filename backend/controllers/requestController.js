@@ -1,6 +1,7 @@
 import Donation from "../models/donation.js";
 import BloodRequest from "../models/bloodRequest.js";
 import User from "../models/userModel.js";
+import {io , connectedDonors} from "../server.js"
 
 // Create a blood request
 export const createBloodRequest = async(req,res)=>{
@@ -16,6 +17,14 @@ export const createBloodRequest = async(req,res)=>{
         const bloodRequest = new BloodRequest({requester_id , blood_group , units_needed , hospital , location , urgency_level,latitude,longitude})
 
         await bloodRequest.save()
+        
+        connectedDonors.forEach((donor , socketId)=>{
+          if(donor.blood_group===bloodRequest.blood_group)
+          {
+            io.to(socketId).emit('newbloodrequest',bloodRequest)
+          }
+        })
+       
 
         res.status(201).json({
             message: "Blood request created successfully",
@@ -143,14 +152,14 @@ export const getUserBloodRequest = async(req,res)=>{
     try{
       const userId = req.user.id
 
-      console.log("User ID from request:", userId);
+      // console.log("User ID from request:", userId);
 
       const bloodRequests = await BloodRequest.find({
         requester_id: userId
       }).sort({createdAt : -1})
 
-      console.log("bloodRequests");
-      console.log(bloodRequests);
+      // console.log("bloodRequests");
+      // console.log(bloodRequests);
 
       res.status(200).json(Array.isArray(bloodRequests) ? bloodRequests : []);
 

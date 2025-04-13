@@ -23,7 +23,7 @@ const protectedRoute = async (req, res, next) => {
       })
     }
 
-    console.log("Authenticated User:", req.user)
+    // console.log("Authenticated User:", req.user)
     next()
   } catch (err) {
     res.status(401).json({ 

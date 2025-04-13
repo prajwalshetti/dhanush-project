@@ -115,50 +115,58 @@ export const updateDonationStatus = async (req, res) => {
 };
 
 
-export const sendDonationRequest = async(req,res)=>{
+export const sendDonationRequest = async(req,res) => {
+  try {
+    const { request_id } = req.body;
+     
+    const bloodRequest = await BloodRequest.findById(request_id)
+      .populate('requester_id', 'name email phone'); 
+      
+    if (!bloodRequest) {
+      return res.status(404).json({ message: "Blood request not found" });
+    }
 
-      try{
-        const { request_id } = req.body;
-         
-        const bloodRequest = await BloodRequest.findById(request_id);
-        if (!bloodRequest) {
-            return res.status(404).json({ message: "Blood request not found" });
-        }
+    
+    const existingDonation = await Donation.findOne({
+      donor_id: req.user.id,
+      request_id,
+    });
 
-         // Check if donor has already sent a request
-         const existingDonation = await Donation.findOne({
-            donor_id: req.user.id,
-            request_id,
-        });
+    if (existingDonation) {
+      return res.status(400).json({ message: "You have already requested to donate for this request." });
+    }
 
-        if (existingDonation) {
-            return res.status(400).json({ message: "You have already requested to donate for this request." });
-        }
-         
+    
+    const newDonation = new Donation({
+      donor_id: req.user.id,
+      request_id,
+      status: "pending",
+    });
 
-        // Create new donation request
-        const newDonation = new Donation({
-            donor_id: req.user.id,
-            request_id,
-            status: "pending",
-        });
+    await newDonation.save();
 
-        await newDonation.save();
+    
+    const donorInfo = await User.findById(req.user.id)
+      .select('name email phone blood_group');
 
+   
+    const populatedDonation = await Donation.findById(newDonation._id)
+      .populate('donor_id', 'name email phone blood_group')
+      .populate('request_id');
 
-        //Later Notify maadbeku..!!
-
-        res.status(201).json({ 
-            message: "Donation request sent successfully. Waiting for requester to accept.", 
-            donation: newDonation 
-        });
-
-      }
-      catch(err)
-      {
-        res.status(500).json({ message: "Server error", error: err.message });
-      }
+    
+    res.status(201).json({ 
+      success: true,
+      message: "Donation request sent successfully. Waiting for requester to accept.", 
+      donation: populatedDonation,
+      donorInfo,
+      requestInfo: bloodRequest
+    });
+  }
+  catch(err) {
+    console.error("Error sending donation request:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
 }
-
 
 

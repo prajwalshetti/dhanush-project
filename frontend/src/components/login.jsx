@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { HeartPulse } from 'lucide-react'
 import axios from 'axios'
-import Home from './Home.jsx'
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -24,22 +23,31 @@ const Login = () => {
     e.preventDefault()
     setError('')
     setLoading(true)
-
+  
     try {
       const response = await axios.post(
         'http://localhost:8000/api/auth/login',
         formData,
-        { withCredentials: true }
+        { 
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
       )
       
+      console.log('Login response:', response.data)
+      
       if (response.data.success) {
-        // No need to store token in localStorage; cookie is set automatically.
+       
         navigate('/')
       } else {
         setError(response.data.message || 'Login failed. Please try again.')
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred during login')
+      console.error('Login error:', err)
+      // Error handling code
+      setError('An error occurred during login')
     } finally {
       setLoading(false)
     }
