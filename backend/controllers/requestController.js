@@ -2,7 +2,7 @@ import Donation from "../models/donation.js";
 import BloodRequest from "../models/bloodRequest.js";
 import User from "../models/userModel.js";
 import {io , connectedDonors} from "../server.js"
-import { getDistanceFromLatLonInKm } from "../../frontend/src/utils/distance.js";
+import { getDistanceFromLatLonInKm } from "../utils/distance.js";
 
 // Create a blood request
 export const createBloodRequest = async(req,res)=>{
