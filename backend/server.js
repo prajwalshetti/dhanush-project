@@ -73,7 +73,8 @@ io.on("connection",(socket)=>{
 
 // CORS configuration: allow credentials and set the frontend origin.
 app.use(cors({
-  origin: `${base_url}`,
+  origin: '*',
+  methods : ['GET','POST','PUT','DELETE','PATCH'],
   credentials: true
 }))
 
