@@ -1,6 +1,6 @@
 import express from 'express'
 import protectedRoute from '../middlewares/AuthMiddleware.js'
-import { registerController , loginController } from '../controllers/AuthController.js'
+import { registerController , loginController, updateLocation, geocode } from '../controllers/AuthController.js'
 import User from '../models/userModel.js'
 
 
@@ -26,6 +26,7 @@ router.get('/getUserById/:id', protectedRoute, async (req, res) => {
       res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
+
 router.get('/check', protectedRoute, (req, res) => {
     res.status(200).json({ success: true, user: req.user })
   })
@@ -34,6 +35,10 @@ router.get('/check', protectedRoute, (req, res) => {
     res.clearCookie('token');  // Replace 'token' with your actual cookie name
     res.status(200).json({ message: 'Logged out successfully' });
 });
+
+router.patch('/update-location',protectedRoute , updateLocation);
+
+router.get('/geocode',geocode)
 
 
 export default router

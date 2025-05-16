@@ -2,8 +2,12 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { HeartPulse } from 'lucide-react'
 import axios from 'axios'
+import { toast, ToastContainer } from "react-toastify"
 
-const Login = () => {
+
+const base_url = import.meta.env.VITE_BASE_URL
+
+const Login = ({setUser}) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -26,7 +30,7 @@ const Login = () => {
   
     try {
       const response = await axios.post(
-        'http://localhost:8000/api/auth/login',
+        `${base_url}/api/auth/login`,
         formData,
         { 
           withCredentials: true,
@@ -35,12 +39,25 @@ const Login = () => {
           }
         }
       )
-      
-      console.log('Login response:', response.data)
-      
+
       if (response.data.success) {
-       
-        navigate('/')
+        toast.success('Login successful!');
+
+        // 2. Fetch user data immediately after login
+        const userResponse = await axios.get(
+          `${base_url}/api/auth/check`,
+          { withCredentials: true }
+        );
+
+        
+        if (userResponse.data.success && userResponse.data.user) {
+          // 3. Update the user state in the parent component
+          setUser(userResponse.data.user);
+
+          // 4. Navigate to home page
+          navigate('/');
+      
+        }
       } else {
         setError(response.data.message || 'Login failed. Please try again.')
       }

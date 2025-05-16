@@ -2,6 +2,7 @@ import Donation from "../models/donation.js";
 import BloodRequest from "../models/bloodRequest.js";
 import User from "../models/userModel.js";
 import {io , connectedDonors} from "../server.js"
+import { getDistanceFromLatLonInKm } from "../../frontend/src/utils/distance.js";
 
 // Create a blood request
 export const createBloodRequest = async(req,res)=>{
@@ -124,29 +125,55 @@ export const deleteBloodRequest = async (req, res) => {
 
 export const getEligibleBloodRequests = async(req,res)=>{
    
-    try{
-        const donorId = req.user.id;
+  try{
+      const donorId = req.user.id;
 
-        // Fetch the donor's details (blood group and location)
-        const donor = await User.findById(donorId).select("blood_group location");
-        if (!donor) {
-            return res.status(404).json({ message: "User not found" });
-        }
+      // Fetch the donor's details (blood group and location)
+      const donor = await User.findById(donorId).select("blood_group location");
+      if (!donor) {
+          return res.status(404).json({ message: "User not found" });
+      }
 
-        // Fetch blood requests that match donor's blood group and location
-        const eligibleRequests = await BloodRequest.find({
-            blood_group: donor.blood_group, 
-            location: donor.location,      
-            status: "pending",              
-        }).sort({ createdAt: -1 });
+      const sortByLocation = req.query.sortByLocation === "true";
 
-        res.status(200).json({ requests: eligibleRequests });
-    }
-    catch(err)
-    {
-        res.status(500).json({ message: "Server error", error: err.message });
-    }
+      // Modified: Now only filtering by blood group, not location
+      let eligibleRequests = await BloodRequest.find({
+          blood_group: donor.blood_group,
+          status: "pending",              
+      }).sort({ createdAt: -1 });
+
+      // Debug info
+      console.log("Donor blood group:", donor.blood_group);
+      console.log("Found eligible requests:", eligibleRequests.length);
+      console.log("Donor location:", donor.location);
+
+      if(sortByLocation && donor.location && donor.location.latitude && donor.location.longitude) {
+          eligibleRequests = eligibleRequests.map((req)=>{
+            // Check if request has latitude/longitude
+            if (!req.latitude || !req.longitude) {
+              return {...req.toObject(), distance: 999999}; // Set a large distance for requests without location
+            }
+            
+            const distance = getDistanceFromLatLonInKm(
+              donor.location.latitude,
+              donor.location.longitude,
+              req.latitude,
+              req.longitude
+            );
+            return {...req.toObject(), distance};
+          });
+
+          eligibleRequests.sort((a,b)=> a.distance - b.distance);
+      }
+
+      res.status(200).json({ requests: eligibleRequests });
+  }
+  catch(err) {
+      console.error("Error in getEligibleBloodRequests:", err);
+      res.status(500).json({ message: "Server error", error: err.message });
+  }
 }
+
 
 export const getUserBloodRequest = async(req,res)=>{
     try{

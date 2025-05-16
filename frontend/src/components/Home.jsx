@@ -11,8 +11,9 @@ import CurrentRequests from "./CurrentRequests";
 import PastRequests from "./PastRequests";
 import MyDonations from "./MyDonations";
 import socket from "../socket.js";
+import { updateUserLocation } from "../utils/locationUpdater";
 
-const Home = () => {
+const Home = ({user}) => {
   // State management
   const [userRequests, setUserRequests] = useState([]);
   const [pastRequests, setPastRequests] = useState([]);
@@ -28,13 +29,17 @@ const Home = () => {
   const [showDonorInfo, setShowDonorInfo] = useState(false);
   const [currentDonorInfo, setCurrentDonorInfo] = useState(null);
   const [completedDonations, setCompletedDonations] = useState({});
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [locationUpdated, setLocationUpdated] = useState(false);
+
+  const base_url = import.meta.env.VITE_BASE_URL
 
   // Fetch user requests
   const fetchUserRequests = async () => {
     setLoading(prev => ({ ...prev, requests: true }));
     try {
       const response = await axios.get(
-        "http://localhost:8000/api/bloodrequest/user",
+        `${base_url}/api/bloodrequest/user`,
         { withCredentials: true }
       );
       const requests = response.data;
@@ -50,7 +55,13 @@ const Home = () => {
       setHasActiveRequests(activeRequests.length > 0);
     } catch (error) {
       console.error("Error fetching blood requests:", error);
-      toast.error("Failed to fetch your blood requests. Please try again later.");
+      if (error.response) {
+        console.error(`Server error: ${error.response.data.message || 'Failed to fetch blood requests'}`);
+      } else if (error.request) {
+        console.error("No response from server. Please check your connection.");
+      } else {
+        console.error("Failed to fetch your blood requests. Please try again later.");
+      }
     } finally {
       setLoading(prev => ({ ...prev, requests: false }));
     }
@@ -61,7 +72,7 @@ const Home = () => {
     setLoading(prev => ({ ...prev, receivedDonations: true }));
     try {
       const response = await axios.get(
-        "http://localhost:8000/api/bloodrequest/donations-received",
+        `${base_url}/api/bloodrequest/donations-received`,
         { withCredentials: true }
       );
 
@@ -90,7 +101,13 @@ const Home = () => {
       setCompletedDonations(completedDonationsMap);
     } catch (err) {
       console.error("Error fetching received donations:", err);
-      toast.error("Failed to fetch received donations. Please try again later.");
+      if (err.response) {
+        console.error(`Server error: ${err.response.data.message || 'Failed to fetch donations'}`);
+      } else if (err.request) {
+        console.error("No response from server. Please check your connection.");
+      } else {
+        console.error("Failed to fetch received donations. Please try again later.");
+      }
     } finally {
       setLoading(prev => ({ ...prev, receivedDonations: false }));
     }
@@ -101,7 +118,7 @@ const Home = () => {
     setLoading(prev => ({ ...prev, myDonations: true }));
     try {
       const response = await axios.get(
-        "http://localhost:8000/api/donations",
+        `${base_url}/api/donations`,
         { withCredentials: true }
       );
 
@@ -120,7 +137,13 @@ const Home = () => {
       setMyDonations(processedDonations);
     } catch (err) {
       console.error("Error fetching my donations:", err);
-      toast.error("Failed to fetch your donation history. Please try again later.");
+      if (err.response) {
+        console.error(`Server error: ${err.response.data.message || 'Failed to fetch your donations'}`);
+      } else if (err.request) {
+        console.error("No response from server. Please check your connection.");
+      } else {
+        console.error("Failed to fetch your donation history. Please try again later.");
+      }
     } finally {
       setLoading(prev => ({ ...prev, myDonations: false }));
     }
@@ -132,7 +155,7 @@ const Home = () => {
     try {
       // Update donation status
       const donationResponse = await axios.put(
-        `http://localhost:8000/api/donations/update/${donationId}`,
+        `${base_url}/api/donations/update/${donationId}`,
         { status },
         { withCredentials: true }
       );
@@ -153,7 +176,7 @@ const Home = () => {
       // If donation is completed, update the blood request status to fulfilled
       if (status === "completed" && requestId) {
         await axios.patch(
-          `http://localhost:8000/api/bloodrequest/${requestId}/status`,
+          `${base_url}/api/bloodrequest/${requestId}/status`,
           { status: "fulfilled" },
           { withCredentials: true }
         );
@@ -180,12 +203,17 @@ const Home = () => {
       await refreshData();
     } catch (err) {
       console.error("Error updating status:", err);
-      toast.error("Failed to update status. Please try again.");
+      if (err.response) {
+        console.error(`Server error: ${err.response.data.message || 'Failed to update status'}`);
+      } else if (err.request) {
+        console.error("No response from server. Please check your connection.");
+      } else {
+        console.error("Failed to update status. Please try again.");
+      }
     } finally {
       setIsUpdating(false);
     }
   };
-
 
   // View donor information for a past request
   const viewDonorInfo = (requestId) => {
@@ -198,7 +226,7 @@ const Home = () => {
       });
       setShowDonorInfo(true);
     } else {
-      toast.error("Donor information not available. The donation may not be completed yet.", {
+      console.error("Donor information not available. The donation may not be completed yet.", {
         position: "top-center",
       });
     }
@@ -206,51 +234,69 @@ const Home = () => {
 
   // Refresh all data
   const refreshData = async () => {
-    await fetchUserRequests();
-    await fetchReceivedDonations();
-    await fetchMyDonations();
+    try {
+      await Promise.all([
+        fetchUserRequests(),
+        fetchReceivedDonations(),
+        fetchMyDonations()
+      ]);
+      setLastUpdated(new Date());
+      // toast.success("Data refreshed successfully!");
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      console.error("Failed to refresh some data. Please try again.");
+    }
   };
 
-
+  // Update user location - runs once when component mounts and whenever user changes
   useEffect(() => {
-    // Listen for donation status updates
-    const handleDonationStatusUpdate = (data) => {
-      // Update donations with the new status
-      setMyDonations(prevDonations => {
-        return prevDonations.map(donation => {
-          if (donation._id === data.donationId) {
-            return {
-              ...donation,
-              status: data.status
-            };
-          }
-          return donation;
+    if (!user) {
+      console.log("[GeoLocation] No user yet—skipping location update");
+      return;
+    }
+    
+    // Only update location once per session
+    if (locationUpdated) {
+      console.log("[GeoLocation] Location already updated this session");
+      return;
+    }
+
+    console.log("[GeoLocation] Starting location update process");
+    
+    // Use the utility function to update location
+    updateUserLocation(
+      // Success callback
+      (location) => {
+        console.log("[GeoLocation] Location updated successfully:", location);
+        setLocationUpdated(true);
+        toast.success("Your location has been updated successfully!", {
+          position: "top-center",
+          autoClose: 5000,
         });
-      });
-      
-      // Show appropriate notification based on status
-      if (data.status === "completed") {
-        toast.success(`Your donation for request #${data.requestId.slice(-5)} has been accepted! 🎉`, {
-          position: "top-right",
-          autoClose: 8000
+      },
+      // Error callback
+      (error) => {
+        console.error("[GeoLocation] Failed to update location:", error);
+        console.error("Failed to update your location. Some features may not work properly.", {
+          position: "top-center",
+          autoClose: 5000,
         });
-      } else if (data.status === "cancelled") {
-        toast.error(`Your donation request has been declined.`, {
-          position: "top-right",
-          autoClose: 5000
+      },
+      // Permission denied callback
+      () => {
+        console.warn("[GeoLocation] Location permission denied");
+        toast.warning("Please enable location services to improve matching with nearby donors/recipients", {
+          position: "top-center",
+          autoClose: 8000,
         });
       }
-    };
+    ).catch((err) => {
+      console.error("[GeoLocation] Uncaught location error:", err);
+    });
+  }, [user, locationUpdated]);
   
-    socket.on('donationStatusUpdated', handleDonationStatusUpdate);
-    
-    return () => {
-      socket.off('donationStatusUpdated', handleDonationStatusUpdate);
-    };
-  }, []);
-
+  // Listen for donation status updates
   useEffect(() => {
-    // Listen for donation status updates
     const handleDonationStatusUpdate = (data) => {
       // Use functional update pattern to ensure we're not updating during render
       setMyDonations(prevDonations => {
@@ -272,7 +318,7 @@ const Home = () => {
           autoClose: 8000
         });
       } else if (data.status === "cancelled") {
-        toast.error(`Your donation request has been declined.`, {
+        console.error(`Your donation request has been declined.`, {
           position: "top-right",
           autoClose: 5000
         });
@@ -288,12 +334,13 @@ const Home = () => {
     };
   }, []);
   
+  // Handle user authentication and new donation requests
   useEffect(() => {
     // Fetch user data or get from cookies first
     const fetchUserData = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:8000/api/auth/check", 
+          `${base_url}/api/auth/check`, 
           { withCredentials: true }
         );
         
@@ -307,6 +354,12 @@ const Home = () => {
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
+        if (error.response && error.response.status === 401) {
+          // Unauthorized - user not logged in
+          console.error("Your session has expired. Please log in again.");
+          // Optional: Redirect to login page
+          // window.location.href = '/login';
+        }
       }
     };
   
@@ -353,6 +406,22 @@ const Home = () => {
     };
   }, []);
 
+  // Manually trigger location update
+  const handleManualLocationUpdate = () => {
+    updateUserLocation(
+      (location) => {
+        toast.success("Location updated successfully!");
+        setLocationUpdated(true);
+      },
+      (error) => {
+        console.error(`Failed to update location: ${error.message}`);
+      },
+      () => {
+        toast.warning("Please enable location permissions to use this feature");
+      }
+    );
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <ToastContainer position="top-right" autoClose={5000} />
@@ -361,70 +430,95 @@ const Home = () => {
       </h1>
       <Navbar />
       <div className="flex-grow px-4">
-  {showDonorInfo && (
-    <DonorInfoModal
-      currentDonorInfo={currentDonorInfo}
-      onClose={() => setShowDonorInfo(false)}
-    />
-  )}
+        {showDonorInfo && (
+          <DonorInfoModal
+            currentDonorInfo={currentDonorInfo}
+            onClose={() => setShowDonorInfo(false)}
+          />
+        )}
 
-  {/* Hero section with action buttons */}
-  <div className="bg-gradient-to-r from-blue-50 to-red-50 rounded-xl p-6 mb-8 shadow-md">
-    <h2 className="text-2xl font-semibold text-center mb-6 text-gray-800">Welcome to the Blood Donation Platform</h2>
-    
-    <div className="flex flex-col md:flex-row justify-center gap-6 max-w-2xl mx-auto">
-      <div className="border-2 border-red-500 rounded-lg p-6 flex-1 flex flex-col items-center justify-center hover:bg-red-50 transition-colors bg-white shadow-sm">
-        <Link to="/request" className="text-xl font-bold text-red-600 hover:text-red-700">
-          Request Blood
-        </Link>
-        <p className="text-sm text-gray-600 mt-2 text-center">
-          Create a blood donation request for emergency needs
-        </p>
+        {/* Hero section with action buttons */}
+        <div className="bg-gradient-to-r from-blue-50 to-red-50 rounded-xl p-6 mb-8 shadow-md">
+          <h2 className="text-2xl font-semibold text-center mb-6 text-gray-800">Welcome to the Blood Donation Platform</h2>
+          
+          <div className="flex flex-col md:flex-row justify-center gap-6 max-w-2xl mx-auto">
+            <div className="border-2 border-red-500 rounded-lg p-6 flex-1 flex flex-col items-center justify-center hover:bg-red-50 transition-colors bg-white shadow-sm">
+              <Link to="/request" className="text-xl font-bold text-red-600 hover:text-red-700">
+                Request Blood
+              </Link>
+              <p className="text-sm text-gray-600 mt-2 text-center">
+                Create a blood donation request for emergency needs
+              </p>
+            </div>
+            <div className="border-2 border-blue-500 rounded-lg p-6 flex-1 flex flex-col items-center justify-center hover:bg-blue-50 transition-colors bg-white shadow-sm">
+              <Link to="/donate" className="text-xl font-bold text-blue-600 hover:text-blue-700">
+                Donate Blood
+              </Link>
+              <p className="text-sm text-gray-600 mt-2 text-center">
+                View and respond to blood requests in your area
+              </p>
+            </div>
+          </div>
+          
+          {/* Location status and manual update button */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600 mb-2">
+              {locationUpdated 
+                ? "Your location is up to date ✓" 
+                : "Location status: Not yet updated"}
+            </p>
+            <button 
+              onClick={handleManualLocationUpdate}
+              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm transition-colors"
+            >
+              Update My Location
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-6 flex justify-between items-center">
+          <button 
+            onClick={refreshData}
+            disabled={loading.requests || loading.receivedDonations || loading.myDonations}
+            className={`${
+              loading.requests || loading.receivedDonations || loading.myDonations
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-500 hover:bg-blue-600"
+            } text-white px-4 py-2 rounded transition-colors flex items-center gap-2`}
+          >
+            <span>{loading.requests || loading.receivedDonations || loading.myDonations ? "Refreshing..." : "Refresh Data"}</span>
+          </button>
+          
+          <div className="text-sm text-gray-500">
+            Last updated: {lastUpdated.toLocaleTimeString()}
+          </div>
+        </div>
+
+        {/* My Donations section */}
+        <MyDonations 
+          myDonations={myDonations} 
+          isLoading={loading.myDonations} 
+        />
+
+        <DonationRequests
+          donations={donations}
+          isUpdating={isUpdating}
+          handleUpdateStatus={handleUpdateStatus}
+          isLoading={loading.receivedDonations}
+        />
+
+        <CurrentRequests 
+          userRequests={userRequests} 
+          isLoading={loading.requests}
+        />
+
+        <PastRequests
+          pastRequests={pastRequests}
+          completedDonations={completedDonations}
+          viewDonorInfo={viewDonorInfo}
+          isLoading={loading.requests}
+        />
       </div>
-      <div className="border-2 border-blue-500 rounded-lg p-6 flex-1 flex flex-col items-center justify-center hover:bg-blue-50 transition-colors bg-white shadow-sm">
-        <Link to="/donate" className="text-xl font-bold text-blue-600 hover:text-blue-700">
-          Donate Blood
-        </Link>
-        <p className="text-sm text-gray-600 mt-2 text-center">
-          View and respond to blood requests in your area
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <div className="mb-6 flex justify-between items-center">
-    <button 
-      onClick={refreshData}
-      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors flex items-center gap-2"
-    >
-      <span>Refresh Data</span>
-    </button>
-    
-    <div className="text-sm text-gray-500">
-      Last updated: {new Date().toLocaleTimeString()}
-    </div>
-  </div>
-
-  {/* My Donations section */}
-  <MyDonations 
-    myDonations={myDonations} 
-    isLoading={loading.myDonations} 
-  />
-
-  <DonationRequests
-    donations={donations}
-    isUpdating={isUpdating}
-    handleUpdateStatus={handleUpdateStatus}
-  />
-
-  <CurrentRequests userRequests={userRequests} />
-
-  <PastRequests
-    pastRequests={pastRequests}
-    completedDonations={completedDonations}
-    viewDonorInfo={viewDonorInfo}
-  />
-</div>
       <Footer />
     </div>
   );

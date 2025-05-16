@@ -5,7 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Link } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import socket  from "../socket";
+import socket from "../socket";
 
 function Donation() {
   const [bloodRequests, setBloodRequests] = useState([]);
@@ -15,6 +15,9 @@ function Donation() {
   const [donationStatus, setDonationStatus] = useState({});
   const [currentUser, setCurrentUser] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [sortByLocation, setSortByLocation] = useState(false);
+
+   const base_url = import.meta.env.VITE_BASE_URL
 
   // Combined fetch function to avoid dependency loops
   const fetchAllData = async () => {
@@ -22,23 +25,24 @@ function Donation() {
       setLoading(true);
       
       // 1. Fetch current user
-      const userResponse = await axios.get("http://localhost:8000/api/auth/check", {
+      const userResponse = await axios.get(`${base_url}/api/auth/check`, {
         withCredentials: true,
       });
       setCurrentUser(userResponse.data.user);
       
       // 2. Fetch user's own requests to filter them out
       const userRequestsResponse = await axios.get(
-        "http://localhost:8000/api/bloodrequest/user",
+        `${base_url}/api/bloodrequest/user`,
         { withCredentials: true }
       );
       const userRequestsData = userRequestsResponse.data || [];
       setUserRequests(userRequestsData);
       
-      // 3. Fetch eligible blood requests
-      const eligibleResponse = await axios.get("http://localhost:8000/api/bloodrequest/eligible", {
-        withCredentials: true,
-      });
+      // 3. Fetch eligible blood requests - now with sortByLocation parameter
+      const eligibleResponse = await axios.get(
+        `${base_url}/api/bloodrequest/eligible?sortByLocation=${sortByLocation}`,
+        { withCredentials: true }
+      );
       
       // Filter out user's own requests
       const allRequests = eligibleResponse.data.requests || [];
@@ -51,7 +55,7 @@ function Donation() {
       setBloodRequests(filteredRequests);
       
       // 4. Check if user has already requested for any of these
-      const donationsResponse = await axios.get("http://localhost:8000/api/donations", {
+      const donationsResponse = await axios.get(`${base_url}/api/donations`, {
         withCredentials: true,
       });
       
@@ -81,9 +85,8 @@ function Donation() {
 
   // Single useEffect for initial data load
   useEffect(() => {
-
     fetchAllData();
-  }, []); // Empty dependency array - only runs on mount
+  }, [sortByLocation]); // Now depends on sortByLocation
 
   useEffect(() => {
     const handleNewRequest = (newRequest) => {
@@ -110,7 +113,7 @@ function Donation() {
   const handleDonateNow = async (requestId) => {
     try {
       const response = await axios.post(
-        "http://localhost:8000/api/donations/request",
+        `${base_url}/api/donations/request`,
         { request_id: requestId },
         { withCredentials: true }
       );
@@ -181,6 +184,11 @@ function Donation() {
     };
   };
 
+  // Toggle sort by location
+  const toggleSortByLocation = () => {
+    setSortByLocation(prev => !prev);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <ToastContainer position="top-right" autoClose={5000} />
@@ -196,7 +204,31 @@ function Donation() {
           </Link>
         </div>
         
-        <h2 className="text-2xl font-bold mb-4">Available Blood Requests</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">Available Blood Requests</h2>
+          <div className="flex space-x-2">
+            <button
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                sortByLocation 
+                ? "bg-blue-600 text-white" 
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+              onClick={toggleSortByLocation}
+            >
+              {sortByLocation ? "✓ Sorted by Distance" : "Sort by Distance"}
+            </button>
+            <button 
+              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              onClick={() => {
+                setLoading(true);
+                fetchAllData();
+              }}
+              disabled={loading}
+            >
+              {loading ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
+        </div>
 
         {loading && !isInitialized ? (
           <div className="flex justify-center items-center py-10">
@@ -234,6 +266,9 @@ function Donation() {
                               {request.urgency || "Normal"}
                             </span>
                           </p>
+                          {request.distance && (
+                            <p><strong>Distance:</strong> {request.distance.toFixed(1)} km</p>
+                          )}
                         </div>
                         {request.additional_info && (
                           <p className="mt-2"><strong>Additional Info:</strong> {request.additional_info}</p>
@@ -251,18 +286,6 @@ function Donation() {
                 );
               })}
             </ul>
-            <div className="mt-6 text-center">
-              <button 
-                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                onClick={() => {
-                  setLoading(true);
-                  fetchAllData();
-                }}
-                disabled={loading}
-              >
-                {loading ? "Refreshing..." : "Refresh Requests"}
-              </button>
-            </div>
           </div>
         )}
       </div>

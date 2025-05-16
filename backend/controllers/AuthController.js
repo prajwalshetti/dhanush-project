@@ -1,54 +1,96 @@
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import User from '../models/userModel.js'
+import axios from 'axios'
 
 
-export const registerController = async(req,res)=>{
-    try{
-      
-        const {name , email , phone ,password , blood_group , location} = req.body
+export const geocode = async(req,res)=>{
+     
+  const {address} = req.query;
+  if (!address) return res.status(400).json({ message: 'Address is required' });
 
-        if(!name || !email || !phone || !password || !blood_group || !location)
-        {
-            return res.send({error : 'All fields are necessary'})
-        }
+  try{
+    const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+      params: {
+        q: address,
+        format: 'json',
+        limit: 1
+      },
+      headers: {
+        'User-Agent': 'LifeShare Blood Donation App'
+      }
+    });
 
-        const existingUser = await User.findOne({email})
-
-        if(existingUser)
-            {
-                return res.status(200).send({
-                    message : "Already registered please login" 
-                    
-                })
-            }
-
-        const salt = await bcrypt.genSalt(10)
-        const hashedPassword = await bcrypt.hash(password , salt)
-
-        const newUser = new User({
-            name, email, phone, password: hashedPassword, blood_group, location 
-        })
-
-        await newUser.save()
-
-
-        res.status(201).send({
-            success : true,
-             message : "user registered successfully",newUser
-         })
+    if (response.data.length > 0) {
+      res.json(response.data[0]);
+    } else {
+      res.status(404).json({ message: 'Location not found' });
     }
-    catch(err)
-    {
-        console.log(err)
-        res.status(500).send({
-            success : false,
-            message : 'Error in Registration ',
-            error : err.message
-        })
-    }
+  }catch(err){
+    res.status(500).json({ message: 'Geocoding failed', error: err.message });
+  }
+
 }
 
+export const registerController = async(req,res) => {
+  try {
+      const {name, email, phone, password, blood_group, location} = req.body
+
+      // Check if all required fields are present
+      if(!name || !email || !phone || !password || !blood_group || !location) {
+          return res.send({error: 'All fields are necessary'})
+      }
+      
+      // Validate that location has the required structure
+      if(!location.address || !location.coordinates || 
+         !location.coordinates.latitude || !location.coordinates.longitude) {
+          return res.send({error: 'Location must include address and coordinates (latitude/longitude)'})
+      }
+
+      const existingUser = await User.findOne({email})
+
+      if(existingUser) {
+          return res.status(200).send({
+              message: "Already registered please login"
+          })
+      }
+
+      const salt = await bcrypt.genSalt(10)
+      const hashedPassword = await bcrypt.hash(password, salt)
+
+      // Create new user with the location object format
+      const newUser = new User({
+          name, 
+          email, 
+          phone, 
+          password: hashedPassword, 
+          blood_group, 
+          location: {
+              address: location.address,
+              coordinates: {
+                  latitude: location.coordinates.latitude,
+                  longitude: location.coordinates.longitude
+              }
+          }
+      })
+
+      await newUser.save()
+
+      res.status(201).send({
+          success: true,
+          message: "User registered successfully",
+          newUser
+      })
+  }
+  catch(err) {
+      console.log(err)
+      res.status(500).send({
+          success: false,
+          message: 'Error in Registration',
+          error: err.message
+      })
+  }
+}
 
 export const loginController = async (req, res) => {
   try {
@@ -100,5 +142,64 @@ export const loginController = async (req, res) => {
       message: "Failed to login",
       error: err.message
     })
+  }
+}
+
+export const updateLocation = async(req,res)=>{
+  try {
+    const {latitude, longitude} = req.body;
+    
+    // Convert to numbers and validate
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+    
+    if (isNaN(lat) || isNaN(lng)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Valid latitude and longitude values required" 
+      });
+    }
+    
+    // Log debug info
+    console.log("Update request for user:", req.user._id);
+    console.log("Location data:", {lat, lng});
+    
+    // Use _id not id, and ensure path matches your schema
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $set: {
+          'location': {
+            latitude: lat,
+            longitude: lng
+          }
+        }
+      },
+      {new: true}
+    );
+    
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    
+    console.log("Updated user:", updatedUser._id);
+    console.log("New location:", updatedUser.location);
+    
+    res.status(200).json({
+      success: true,
+      message: "Location updated successfully",
+      location: updatedUser.location
+    });
+  }
+  catch(err) {
+    console.error("Location update error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to update location", 
+      error: err.message 
+    });
   }
 }

@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios"; 
 
+const base_url = import.meta.env.VITE_BASE_URL
+
 const RequestForm = () => {
     const [formData, setFormData] = useState({
         blood_group: "",
@@ -83,7 +85,7 @@ const RequestForm = () => {
         try {
             // Send the request using cookies-based authentication
             const response = await axios.post(
-                "http://localhost:8000/api/bloodrequest/create", 
+                `${base_url}/api/bloodrequest/create`, 
                 formData,
                 {
                     headers: {

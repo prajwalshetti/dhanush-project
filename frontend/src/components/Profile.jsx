@@ -6,6 +6,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
+const base_url = import.meta.env.VITE_BASE_URL
+
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [donations, setDonations] = useState([]);
@@ -28,6 +30,14 @@ const Profile = () => {
   });
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   
+  // State for city search
+  const [citySearchTerm, setCitySearchTerm] = useState("");
+  const [citySearchResults, setCitySearchResults] = useState([]);
+  const [searchingCity, setSearchingCity] = useState(false);
+  
+  // State for storing city name
+  const [locationCity, setLocationCity] = useState("Loading location...");
+  
   // Fetch user data
   useEffect(() => {
     const fetchUserData = async () => {
@@ -35,7 +45,7 @@ const Profile = () => {
       try {
         // Fetch user profile
         const userResponse = await axios.get(
-          "http://localhost:8000/api/user/profile",
+          `${base_url}/api/user/profile`,
           { withCredentials: true }
         );
         
@@ -47,7 +57,7 @@ const Profile = () => {
         
         // Fetch user donations
         const donationsResponse = await axios.get(
-          "http://localhost:8000/api/donations",
+          `${base_url}/api/donations`,
           { withCredentials: true }
         );
         
@@ -56,7 +66,7 @@ const Profile = () => {
         
         // Fetch user blood requests
         const requestsResponse = await axios.get(
-          "http://localhost:8000/api/bloodrequest/user",
+          `${base_url}/api/bloodrequest/user`,
           { withCredentials: true }
         );
         
@@ -89,13 +99,97 @@ const Profile = () => {
     fetchUserData();
   }, []);
   
+  // Fetch city name from coordinates
+  useEffect(() => {
+    if (user?.location && typeof user.location === 'object' && user.location.latitude && user.location.longitude) {
+      const fetchCityFromCoordinates = async () => {
+        try {
+          // Using OpenStreetMap's Nominatim API for reverse geocoding
+          const response = await axios.get(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${user.location.latitude}&lon=${user.location.longitude}&zoom=10`,
+            { headers: { 'Accept-Language': 'en' } }
+          );
+          
+          const address = response.data.address;
+          // Try to get the most relevant locality information
+          const city = address.city || address.town || address.village || address.county || address.state;
+          if (city) {
+            setLocationCity(`${city}${address.state ? `, ${address.state}` : ''}`);
+          } else {
+            setLocationCity("Location found (no city available)");
+          }
+        } catch (error) {
+          console.error("Error fetching location data:", error);
+          setLocationCity("Could not determine city");
+        }
+      };
+      
+      fetchCityFromCoordinates();
+    } else {
+      setLocationCity("Location not set");
+    }
+  }, [user?.location]);
+  
   // Handle user info updates
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Special handling for location data
+    if (name === "latitude" || name === "longitude") {
+      setUpdatedUser(prev => ({
+        ...prev,
+        location: {
+          ...prev.location,
+          [name]: value
+        }
+      }));
+    } else {
+      setUpdatedUser(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  };
+  
+  // Handle city search
+  const handleCitySearch = async (e) => {
+    const searchTerm = e.target.value;
+    setCitySearchTerm(searchTerm);
+    
+    if (searchTerm.length < 3) {
+      setCitySearchResults([]);
+      return;
+    }
+    
+    setSearchingCity(true);
+    try {
+      // Using OpenStreetMap's Nominatim API for geocoding
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&limit=5`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      
+      setCitySearchResults(response.data);
+    } catch (error) {
+      console.error("Error searching for cities:", error);
+      toast.error("Error searching for cities. Please try again.");
+    } finally {
+      setSearchingCity(false);
+    }
+  };
+  
+  // Handle city selection
+  const handleCitySelect = (city) => {
     setUpdatedUser(prev => ({
       ...prev,
-      [name]: value
+      location: {
+        latitude: city.lat,
+        longitude: city.lon,
+        city: city.display_name
+      }
     }));
+    setCitySearchTerm(city.display_name);
+    setCitySearchResults([]);
   };
   
   const handlePasswordChange = (e) => {
@@ -110,15 +204,14 @@ const Profile = () => {
     e.preventDefault();
     try {
       const response = await axios.put(
-        "http://localhost:8000/api/user/update",
+        `${base_url}/api/user/update`,
         updatedUser,
         { withCredentials: true }
       );
 
-
-      console.log("updated info : ",response)
+      console.log("updated info : ", response);
       
-      if (response.status===200) {
+      if (response.status === 200) {
         setUser(updatedUser);
         setEditMode(false);
         toast.success("Profile updated successfully!");
@@ -139,19 +232,18 @@ const Profile = () => {
     
     try {
       const response = await axios.put(
-        "http://localhost:8000/api/user/change-password",
+        `${base_url}/api/user/change-password`,
         {
           currentPassword: passwordForm.currentPassword,
           newPassword: passwordForm.newPassword,
-          confirmPassword : passwordForm.confirmPassword
+          confirmPassword: passwordForm.confirmPassword
         },
         { withCredentials: true }
       );
 
-
-      console.log("updated password : ",response)
+      console.log("updated password : ", response);
       
-      if (response.status===200) {
+      if (response.status === 200) {
         setPasswordForm({
           currentPassword: "",
           newPassword: "",
@@ -166,21 +258,21 @@ const Profile = () => {
     }
   };
   
-  // Render loading state
-  if (loading) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="spinner-border text-red-500" role="status">
-            <span className="sr-only">Loading...</span>
-          </div>
-          <p className="ml-2">Loading profile data...</p>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+  // Format location display
+  const formatLocation = (location) => {
+    if (!location) return "Not specified";
+    
+    // If location is an object with latitude and longitude
+    if (typeof location === 'object' && location !== null) {
+      if (location.latitude && location.longitude) {
+        return locationCity;
+      }
+      return "Location data incomplete";
+    }
+    
+    // If location is still a string (backward compatibility)
+    return location;
+  };
   
   // Calculate badge level based on donations
   const getBadgeInfo = () => {
@@ -222,6 +314,22 @@ const Profile = () => {
       return `Eligible on ${eligibleDate.toLocaleDateString()}`;
     }
   };
+
+  // Render loading state
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center">
+          <div className="spinner-border text-red-500" role="status">
+            <span className="sr-only">Loading...</span>
+          </div>
+          <p className="ml-2">Loading profile data...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -279,7 +387,7 @@ const Profile = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Location</p>
-                    <p className="font-semibold">{user?.location}</p>
+                    <p className="font-semibold">{formatLocation(user?.location)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Next Eligible Donation</p>
@@ -384,14 +492,42 @@ const Profile = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Location</label>
-                    <input
-                      type="text"
-                      name="location"
-                      value={updatedUser.location || ""}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-red-500 focus:border-red-500"
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search for a city"
+                        value={citySearchTerm}
+                        onChange={handleCitySearch}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-red-500 focus:border-red-500"
+                        required
+                      />
+                      {searchingCity && (
+                        <div className="absolute right-3 top-3">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                        </div>
+                      )}
+                      
+                      {citySearchResults.length > 0 && (
+                        <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 max-h-60 overflow-auto">
+                          {citySearchResults.map((city, index) => (
+                            <div 
+                              key={index}
+                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                              onClick={() => handleCitySelect(city)}
+                            >
+                              {city.display_name}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {updatedUser.location?.latitude && updatedUser.location?.longitude && (
+                      <div className="mt-2 text-xs text-gray-500">
+                        <p>Latitude: {updatedUser.location.latitude}</p>
+                        <p>Longitude: {updatedUser.location.longitude}</p>
+                      </div>
+                    )}
                   </div>
                   <div className="pt-3">
                     <button
