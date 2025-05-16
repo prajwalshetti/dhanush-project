@@ -18,7 +18,12 @@ import {Server} from 'socket.io';
 
 
 
+
+
 dotenv.config()
+
+
+const base_url = process.env.CLIENT_URL
 connectDb()
 const PORT = process.env.PORT || 8000
 
@@ -27,7 +32,7 @@ const server = http.createServer(app);
 
 const io = new Server(server , {
   cors :{
-    origin : 'http://localhost:5173',
+    origin : `${base_url}`,
     credentials : true
   }
 })
@@ -68,7 +73,7 @@ io.on("connection",(socket)=>{
 
 // CORS configuration: allow credentials and set the frontend origin.
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: `${base_url}`,
   credentials: true
 }))
 

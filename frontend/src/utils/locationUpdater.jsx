@@ -24,7 +24,7 @@ export const updateUserLocation = (onSuccess, onError, onPermissionDenied) => {
           
           // Make API call to update location
           const response = await axios.patch(
-            'http://localhost:8000/api/auth/update-location',
+            `${base_url}/api/auth/update-location`,
             { latitude, longitude },
             { withCredentials: true }
           );

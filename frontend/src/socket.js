@@ -1,6 +1,8 @@
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:8000', {
+const base_url = import.meta.env.VITE_BASE_URL
+
+const socket = io(`${base_url}`, {
   withCredentials: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
