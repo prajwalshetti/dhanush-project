@@ -7,6 +7,7 @@ import RequestForm from './components/RequestForm.jsx';
 import Donation from './components/Donation.jsx';
 import Profile from './components/Profile.jsx';
 import AIAgent from './components/AIAgent.jsx';
+import axios from 'axios';
 
 const base_url = import.meta.env.VITE_BASE_URL
 
