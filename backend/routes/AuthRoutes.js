@@ -28,6 +28,7 @@ router.get('/getUserById/:id', protectedRoute, async (req, res) => {
 });
 
 router.get('/check', protectedRoute, (req, res) => {
+     console.log("Authenticated user:", req.user);
     res.status(200).json({ success: true, user: req.user })
   })
 

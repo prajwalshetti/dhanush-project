@@ -49,6 +49,9 @@ const Login = ({setUser}) => {
           { withCredentials: true }
         );
 
+        console.log("Response from /check:", userResponse.data);
+
+
         
         if (userResponse.data.success && userResponse.data.user) {
           // 3. Update the user state in the parent component
