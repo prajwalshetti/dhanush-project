@@ -124,12 +124,12 @@ export const loginController = async (req, res) => {
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' })
 
     // Set token in an HttpOnly cookie
-    res.cookie("token", token, {
-      httpOnly: true, // not accessible via JavaScript
-      secure: process.env.NODE_ENV === "production", // only use HTTPS in production
-      sameSite: "strict", // helps prevent CSRF
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-    })
+    res.cookie('token', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    maxAge: 24 * 60 * 60 * 1000,
+});
 
     return res.status(201).send({
       success: true,
