@@ -7,6 +7,15 @@ const UserSchema = new mongoose.Schema({
     phone: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     blood_group: { type: String, required: true },
+    // In your User model
+    profilePicture: {
+      type: String,
+      default: null
+    },
+    profilePictureKey: {
+      type: String,
+      default: null
+    },
     location: {
         type: {
           latitude: {
@@ -27,7 +36,9 @@ const UserSchema = new mongoose.Schema({
     last_donation_date: { type: Date, default: null },
     health_status: { type: String, default: '' },
    
-}, { timestamps: true });
+}, 
+
+{ timestamps: true });
 
 
 

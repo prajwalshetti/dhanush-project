@@ -87,7 +87,8 @@ app.use("/api/bloodrequest", bloodRequestRoutes)
 app.use("/api/donations", donationRoutes)
 app.use("/api/user",userProfileRoutes)
 
-app.use("/api/upload", uploadRoutes);
+app.use("/api", uploadRoutes);
+
 
 
 

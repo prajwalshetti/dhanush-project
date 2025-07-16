@@ -13,6 +13,7 @@ export const updateUserLocation = (onSuccess, onError, onPermissionDenied) => {
     onError(new Error("Your browser doesn't support geolocation"));
     return Promise.reject(new Error("Geolocation not supported"));
   }
+  const base_url = import.meta.env.VITE_BASE_URL
   
   return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(

@@ -1,19 +1,34 @@
 import User from "../models/userModel.js"
 import bcrypt from 'bcrypt'
+import s3 from "../utils/s3.js";
 
 //getting User profile
-export const getUserProfile=async(req,res)=>{
-    try{
-        const user = await User.findById(req.user._id).select("-password");
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-        res.status(202).json(user);
+export const getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password").lean();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
-    catch{
-        res.status(405).json({ message: "Server Error" });
+
+    // If a profile picture exists, generate signed URL
+    if (user.profilePictureKey) {
+      const signedUrl = s3.getSignedUrl("getObject", {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: user.profilePictureKey,
+        Expires: 60 * 5, // 5 minutes
+      });
+
+      user.profilePicture = signedUrl; // Attach the image URL to the user object
     }
-}
+
+    return res.status(200).json(user); // or { user } if you want to wrap
+  } catch (err) {
+    console.error("Error in getUserProfile:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 
 //update
 export const updateUserProfile = async (req, res) => {
