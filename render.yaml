@@ -1,12 +1,32 @@
-# render.yaml for BloodConnect
+# render.yaml for BloodConnect (Free Tier Configuration)
 services:
-  # Backend: Node runtime
-  - type: web
+  # Frontend: Static site (Vite) - Free tier
+  - type: static_site
+    name: bloodconnect-web
+    rootDir: ./frontend
+    buildCommand: 'npm install && npm run build'
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_BASE_URL
+        value: /api
+      - key: VITE_API_URL
+        value: https://bloodconnect-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    autoDeploy: true
+
+  # Backend: Using Render's free tier with static site + serverless functions
+  - type: static_site
     name: bloodconnect-api
-    runtime: node
     rootDir: ./backend
     buildCommand: 'npm install'
-    startCommand: 'node server.js'
+    staticPublishPath: .
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /server.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -24,36 +44,4 @@ services:
         value: https://bloodconnect-web.onrender.com
       - key: CORS_ORIGIN
         value: https://bloodconnect-web.onrender.com
-      - key: EMAIL_HOST
-        sync: false
-      - key: EMAIL_PORT
-        sync: false
-      - key: EMAIL_USER
-        sync: false
-      - key: EMAIL_PASS
-        sync: false
-      - key: EMAIL_FROM
-        value: "BloodConnect <noreply@bloodconnect.com>"
-    healthCheckPath: /api/health
-    plan: starter
-    autoDeploy: true
-
-  # Frontend: Static site (Vite)
-  - type: web
-    name: bloodconnect-web
-    runtime: static
-    rootDir: ./frontend
-    buildCommand: 'npm install && npm run build'
-    staticPublishPath: ./dist
-    envVars:
-      - key: VITE_BASE_URL
-        value: /api
-      - key: VITE_API_URL
-        value: https://bloodconnect-api.onrender.com
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    healthCheckPath: /
-    plan: starter
     autoDeploy: true
