@@ -1,12 +1,11 @@
 # Render Blueprint for BloodConnect Application
-# Reference: https://render.com/docs/blueprint-spec
+# Use dockerfile: at service level (no build: block)
 services:
   # Frontend Service
   - type: web
     name: bloodconnect-web
     env: node
-    build:
-      dockerfile: ./frontend/Dockerfile
+    dockerfile: ./frontend/Dockerfile
     envVars:
       - key: NODE_ENV
         value: production
@@ -26,20 +25,16 @@ services:
   - type: web
     name: bloodconnect-api
     env: node
-    build:
-      dockerfile: ./backend/Dockerfile
+    dockerfile: ./backend/Dockerfile
     envVars:
-      # Server Configuration
       - key: NODE_ENV
         value: production
       - key: PORT
         value: "10000"
 
-      # MongoDB Configuration (set manually in Render dashboard / secrets)
       - key: MONGODB_URI
         sync: false
 
-      # JWT Configuration
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
@@ -47,13 +42,11 @@ services:
       - key: JWT_COOKIE_EXPIRES
         value: "90"
 
-      # CORS & Client URLs
       - key: CLIENT_URL
         value: https://bloodconnect-web.onrender.com
       - key: CORS_ORIGIN
         value: https://bloodconnect-web.onrender.com
 
-      # Email Configuration (set manually)
       - key: EMAIL_HOST
         sync: false
       - key: EMAIL_PORT
