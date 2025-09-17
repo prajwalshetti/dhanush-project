@@ -1,12 +1,15 @@
 # render.yaml for BloodConnect (Free Tier Configuration)
 services:
   # Frontend: Static site (Vite) - Free tier
-  - type: static_site
+  - type: web
     name: bloodconnect-web
+    env: node
     rootDir: ./frontend
     buildCommand: 'npm install && npm run build'
     staticPublishPath: ./dist
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: VITE_BASE_URL
         value: /api
       - key: VITE_API_URL
@@ -15,18 +18,16 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+    plan: free
     autoDeploy: true
 
-  # Backend: Using Render's free tier with static site + serverless functions
-  - type: static_site
+  # Backend: Web service with free tier
+  - type: web
     name: bloodconnect-api
+    env: node
     rootDir: ./backend
     buildCommand: 'npm install'
-    staticPublishPath: .
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /server.js
+    startCommand: 'node server.js'
     envVars:
       - key: NODE_ENV
         value: production
@@ -44,4 +45,5 @@ services:
         value: https://bloodconnect-web.onrender.com
       - key: CORS_ORIGIN
         value: https://bloodconnect-web.onrender.com
+    plan: free
     autoDeploy: true
