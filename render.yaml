@@ -12,6 +12,8 @@ services:
         value: production
       - key: VITE_BASE_URL
         value: /api
+      - key: VITE_API_URL
+        value: https://bloodconnect-api.onrender.com
     routes:
       - type: rewrite
         source: /*
@@ -19,7 +21,6 @@ services:
     healthCheckPath: /
     plan: free
     autoDeploy: true
-    env: node
 
   # Backend Service
   - type: web
@@ -28,30 +29,43 @@ services:
     build:
       dockerfile: ./backend/Dockerfile
     envVars:
+      # Server Configuration
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
+      
+      # MongoDB Configuration
       - key: MONGODB_URI
-        fromService:
-          name: bloodconnect-db
-          type: mongodb
-          property: connectionString
+        sync: false  # This will be set manually in Render dashboard
+      
+      # JWT Configuration
       - key: JWT_SECRET
         generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 90d
+      - key: JWT_COOKIE_EXPIRES
+        value: 90
+      
+      # CORS & Client URLs
       - key: CLIENT_URL
-        value: https://bloodconnect-web.onrender.com  # Update this after deployment
+        value: https://bloodconnect-web.onrender.com
       - key: CORS_ORIGIN
-        value: https://bloodconnect-web.onrender.com  # Update this after deployment
+        value: https://bloodconnect-web.onrender.com
+      
+      # Email Configuration (if using Nodemailer)
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: EMAIL_FROM
+        value: BloodConnect <noreply@bloodconnect.com>
+    
+    # Health check configuration
     healthCheckPath: /api/health
     plan: free
     autoDeploy: true
-
-  # Database Service
-  - type: mongodb
-    name: bloodconnect-db
-    databaseName: bloodconnect
-    user: bloodconnect_user
-    plan: free
-    region: oregon
-    version: 6.0
