@@ -49,28 +49,6 @@ services:
       - key: CORS_ORIGIN
         value: "https://bloodconnect-web.onrender.com"
 
-      # AWS / S3
-      - key: AWS_ACCESS_KEY
-        sync: false
-      - key: AWS_SECRET_KEY
-        sync: false
-      - key: AWS_REGION
-        value: "ap-south-1"
-      - key: S3_BUCKET_NAME
-        value: "blood-connect-profile-pics"
-
-      # Email (set in dashboard)
-      - key: EMAIL_HOST
-        sync: false
-      - key: EMAIL_PORT
-        sync: false
-      - key: EMAIL_USER
-        sync: false
-      - key: EMAIL_PASS
-        sync: false
-      - key: EMAIL_FROM
-        value: "BloodConnect <noreply@bloodconnect.com>"
-
     healthCheckPath: /api/health
 
   # Frontend Service (Static site; SPA rewrite allowed)
