@@ -1,13 +1,5 @@
 # Render Blueprint for BloodConnect Application
 # Reference: https://render.com/docs/blueprint-spec
-
-# Global settings for all services
-global:
-  name: bloodconnect
-  instanceSize: free  # Options: free, starter, standard, plus, pro, pro-plus, pro-max
-  region: oregon  # Options: oregon, ohio, frankfurt, singapore, sydney
-
-# Define services
 services:
   # Frontend Service
   - type: web
@@ -27,6 +19,7 @@ services:
     healthCheckPath: /
     plan: free
     autoDeploy: true
+    env: node
 
   # Backend Service
   - type: web
@@ -40,37 +33,25 @@ services:
       - key: PORT
         value: 10000
       - key: MONGODB_URI
-        fromDatabase:
+        fromService:
           name: bloodconnect-db
+          type: mongodb
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: CLIENT_URL
-        value: https://${BLOODCONNECT_WEB_URL}
+        value: https://bloodconnect-web.onrender.com  # Update this after deployment
       - key: CORS_ORIGIN
-        value: https://${BLOODCONNECT_WEB_URL}
+        value: https://bloodconnect-web.onrender.com  # Update this after deployment
     healthCheckPath: /api/health
-    plan: free  # For production, consider using a paid plan
+    plan: free
     autoDeploy: true
 
-# Database Service
-databases:
-  - name: bloodconnect-db
+  # Database Service
+  - type: mongodb
+    name: bloodconnect-db
     databaseName: bloodconnect
     user: bloodconnect_user
-    plan: free  # For production, consider using a paid plan
+    plan: free
     region: oregon
     version: 6.0
-    # For production, consider adding these:
-    # - persistence:
-    #     size: 10GB  # Adjust based on your needs
-    # - backups:
-    #     enabled: true
-    #     retention: 30d
-
-# Environment variables that will be available to all services
-envVars:
-  - key: NODE_ENV
-    value: production
-  - key: DEBUG
-    value: 'bloodconnect:*'
