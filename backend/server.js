@@ -42,6 +42,10 @@ export {io};//exporting io globally so that can use it from wherever needed i.e 
 app.use(express.json())
 app.use(cookieParser())
 
+// Health check route
+import healthRouter from './routes/health.js'
+app.use('/api', healthRouter)
+
 export const connectedDonors = new Map();
 
 io.on("connection",(socket)=>{
@@ -71,12 +75,14 @@ io.on("connection",(socket)=>{
     })
 })
 
-// CORS configuration: allow credentials and set the frontend origin.
-app.use(cors({
-  origin: `${base_url}`,
-  methods : ['GET','POST','PUT','DELETE','PATCH'],
-  credentials: true
-}))
+// Import CORS configuration
+import corsOptions from './config/cors.js';
+
+// CORS configuration
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 app.get('/', (req, res) => {
   res.send("Blood donation running successfully")

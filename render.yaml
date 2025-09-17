@@ -1,0 +1,76 @@
+# Render Blueprint for BloodConnect Application
+# Reference: https://render.com/docs/blueprint-spec
+
+# Global settings for all services
+global:
+  name: bloodconnect
+  instanceSize: free  # Options: free, starter, standard, plus, pro, pro-plus, pro-max
+  region: oregon  # Options: oregon, ohio, frankfurt, singapore, sydney
+
+# Define services
+services:
+  # Frontend Service
+  - type: web
+    name: bloodconnect-web
+    env: node
+    build:
+      dockerfile: ./frontend/Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VITE_BASE_URL
+        value: /api
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    healthCheckPath: /
+    plan: free
+    autoDeploy: true
+
+  # Backend Service
+  - type: web
+    name: bloodconnect-api
+    env: node
+    build:
+      dockerfile: ./backend/Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        fromDatabase:
+          name: bloodconnect-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        value: https://${BLOODCONNECT_WEB_URL}
+      - key: CORS_ORIGIN
+        value: https://${BLOODCONNECT_WEB_URL}
+    healthCheckPath: /api/health
+    plan: free  # For production, consider using a paid plan
+    autoDeploy: true
+
+# Database Service
+databases:
+  - name: bloodconnect-db
+    databaseName: bloodconnect
+    user: bloodconnect_user
+    plan: free  # For production, consider using a paid plan
+    region: oregon
+    version: 6.0
+    # For production, consider adding these:
+    # - persistence:
+    #     size: 10GB  # Adjust based on your needs
+    # - backups:
+    #     enabled: true
+    #     retention: 30d
+
+# Environment variables that will be available to all services
+envVars:
+  - key: NODE_ENV
+    value: production
+  - key: DEBUG
+    value: 'bloodconnect:*'
