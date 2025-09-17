@@ -1,23 +1,23 @@
-# render.yaml for dhanushc8264-connectblood (no Dockerfiles)
+# render.yaml for BloodConnect
 services:
-  # Backend: Node runtime (runs from backend/ folder)
+  # Backend: Node runtime
   - type: web
     name: bloodconnect-api
     runtime: node
     rootDir: ./backend
     buildCommand: 'npm install'
-    startCommand: 'node server.js'     # change to 'npm start' if you have a start script
+    startCommand: 'node server.js'
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: "10000"
       - key: MONGODB_URI
-        sync: false
+        value: mongodb+srv://<username>:<password>@<cluster>.mongodb.net/bloodconnect?retryWrites=true&w=majority
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
-        value: 90d
+        value: "90d"
       - key: JWT_COOKIE_EXPIRES
         value: "90"
       - key: CLIENT_URL
@@ -38,7 +38,7 @@ services:
     plan: free
     autoDeploy: true
 
-  # Frontend: Static site (Vite) -- supports routes / SPA rewrites
+  # Frontend: Static site (Vite)
   - type: web
     name: bloodconnect-web
     runtime: static
