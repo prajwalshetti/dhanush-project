@@ -1,30 +1,12 @@
+# render.yaml for dhanushc8264-connectblood (no Dockerfiles)
 services:
-  - type: web
-    name: bloodconnect-web
-    runtime: docker
-    repo: https://github.com/your-org/your-repo # optional, defaults to repo containing render.yaml
-    dockerfilePath: ./frontend/Dockerfile
-    dockerContext: ./frontend        # optional; defaults to repo root
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: VITE_BASE_URL
-        value: /api
-      - key: VITE_API_URL
-        value: https://bloodconnect-api.onrender.com
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    healthCheckPath: /
-    plan: free
-    autoDeploy: true
-
+  # Backend: Node runtime (runs from backend/ folder)
   - type: web
     name: bloodconnect-api
-    runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend        # optional if Dockerfile expects backend dir as context
+    runtime: node
+    rootDir: ./backend
+    buildCommand: 'npm install'
+    startCommand: 'node server.js'     # change to 'npm start' if you have a start script
     envVars:
       - key: NODE_ENV
         value: production
@@ -53,5 +35,25 @@ services:
       - key: EMAIL_FROM
         value: "BloodConnect <noreply@bloodconnect.com>"
     healthCheckPath: /api/health
+    plan: free
+    autoDeploy: true
+
+  # Frontend: Static site (Vite) -- supports routes / SPA rewrites
+  - type: web
+    name: bloodconnect-web
+    runtime: static
+    rootDir: ./frontend
+    buildCommand: 'npm install && npm run build'
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_BASE_URL
+        value: /api
+      - key: VITE_API_URL
+        value: https://bloodconnect-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    healthCheckPath: /
     plan: free
     autoDeploy: true
