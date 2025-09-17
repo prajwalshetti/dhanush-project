@@ -33,27 +33,27 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 10000
-      
-      # MongoDB Configuration
+        value: "10000"
+
+      # MongoDB Configuration (set manually in Render dashboard / secrets)
       - key: MONGODB_URI
-        sync: false  # This will be set manually in Render dashboard
-      
+        sync: false
+
       # JWT Configuration
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
         value: 90d
       - key: JWT_COOKIE_EXPIRES
-        value: 90
-      
+        value: "90"
+
       # CORS & Client URLs
       - key: CLIENT_URL
         value: https://bloodconnect-web.onrender.com
       - key: CORS_ORIGIN
         value: https://bloodconnect-web.onrender.com
-      
-      # Email Configuration (if using Nodemailer)
+
+      # Email Configuration (set manually)
       - key: EMAIL_HOST
         sync: false
       - key: EMAIL_PORT
@@ -63,9 +63,8 @@ services:
       - key: EMAIL_PASS
         sync: false
       - key: EMAIL_FROM
-        value: BloodConnect <noreply@bloodconnect.com>
-    
-    # Health check configuration
+        value: "BloodConnect <noreply@bloodconnect.com>"
+
     healthCheckPath: /api/health
     plan: free
     autoDeploy: true
