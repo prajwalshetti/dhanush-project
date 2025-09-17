@@ -1,74 +1,59 @@
-# render.yaml for BloodConnect (use Render-managed env vars; secrets set in dashboard)
 databases:
   - name: bloodconnect-mongo
     databaseName: bloodconnect
     plan: free
-    ipAllowList: []
+    ipAllowList: []  # Only Render services can access
 
 services:
-  # Backend Service (Docker runtime)
+  # Backend Service
   - type: web
     name: bloodconnect-api
-    runtime: docker
-    dockerfilePath: ./backend/Dockerfile
+    env: docker
+    plan: free
+    dockerfilePath: backend/Dockerfile
     dockerContext: ./backend
     autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: "8000"                     # you used 8000 in your .env
-      # Database: use Render-managed DB connection string
+        value: "10000"
       - key: MONGODB_URI
         fromDatabase:
           name: bloodconnect-mongo
           property: connectionString
-      # If you prefer to use an external Atlas URL (MONGO_URL), set it in the dashboard:
-      - key: MONGO_URL
-        sync: false
-
-      # JWT & Auth
       - key: JWT_SECRET
-        sync: false                       # set your secret in the Render dashboard (do not store in repo)
+        generateValue: true
       - key: JWT_EXPIRES_IN
         value: "90d"
-      - key: JWT_COOKIE_EXPIRES
-        value: "90"
-
-      # Twilio (secrets)
-      - key: TWILIO_ACCOUNT_SID
-        sync: false
-      - key: TWILIO_AUTH_TOKEN
-        sync: false
-      - key: TWILIO_PHONE_NUMBER
-        sync: false
-
-      # Client / CORS
       - key: CLIENT_URL
-        value: "http://localhost:5173"    # dev value; change to your production frontend domain after deploy
+        value: https://bloodconnect-web.onrender.com
       - key: CORS_ORIGIN
-        value: "https://bloodconnect-web.onrender.com"
+        value: https://bloodconnect-web.onrender.com
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: EMAIL_FROM
+        value: "BloodConnect <noreply@bloodconnect.com>"
 
-    healthCheckPath: /api/health
-
-  # Frontend Service (Static site; SPA rewrite allowed)
+  # Frontend Service (Static Site)
   - type: web
     name: bloodconnect-web
     runtime: static
     rootDir: ./frontend
-    buildCommand: 'npm install && npm run build'
+    buildCommand: npm install && npm run build
     staticPublishPath: ./dist
-    autoDeploy: true
     envVars:
-      # Vite variables are baked into the build, so these must be set for the build step
       - key: VITE_BASE_URL
         value: /api
       - key: VITE_API_URL
-        value: "https://bloodconnect-api.onrender.com"   # update if backend hostname differs
-      - key: CLIENT_URL
-        value: "http://localhost:5173"
+        value: https://bloodconnect-api.onrender.com
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
-    healthCheckPath: /
