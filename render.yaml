@@ -1,11 +1,10 @@
-# Render Blueprint for BloodConnect Application
-# Use dockerfile: at service level (no build: block)
 services:
-  # Frontend Service
   - type: web
     name: bloodconnect-web
-    env: node
-    dockerfile: ./frontend/Dockerfile
+    runtime: docker
+    repo: https://github.com/your-org/your-repo # optional, defaults to repo containing render.yaml
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend        # optional; defaults to repo root
     envVars:
       - key: NODE_ENV
         value: production
@@ -21,32 +20,28 @@ services:
     plan: free
     autoDeploy: true
 
-  # Backend Service
   - type: web
     name: bloodconnect-api
-    env: node
-    dockerfile: ./backend/Dockerfile
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend        # optional if Dockerfile expects backend dir as context
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: "10000"
-
       - key: MONGODB_URI
         sync: false
-
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
         value: 90d
       - key: JWT_COOKIE_EXPIRES
         value: "90"
-
       - key: CLIENT_URL
         value: https://bloodconnect-web.onrender.com
       - key: CORS_ORIGIN
         value: https://bloodconnect-web.onrender.com
-
       - key: EMAIL_HOST
         sync: false
       - key: EMAIL_PORT
@@ -57,7 +52,6 @@ services:
         sync: false
       - key: EMAIL_FROM
         value: "BloodConnect <noreply@bloodconnect.com>"
-
     healthCheckPath: /api/health
     plan: free
     autoDeploy: true
