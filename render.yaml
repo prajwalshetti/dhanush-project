@@ -35,7 +35,7 @@ services:
       - key: EMAIL_FROM
         value: "BloodConnect <noreply@bloodconnect.com>"
     healthCheckPath: /api/health
-    plan: free
+    plan: starter
     autoDeploy: true
 
   # Frontend: Static site (Vite)
@@ -55,5 +55,5 @@ services:
         source: /*
         destination: /index.html
     healthCheckPath: /
-    plan: free
+    plan: starter
     autoDeploy: true
